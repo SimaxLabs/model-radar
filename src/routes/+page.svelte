@@ -3,27 +3,36 @@
     Activity,
     BadgeDollarSign,
     BrainCircuit,
+    Check,
+    ChevronRight,
     CircleAlert,
     Database,
     ExternalLink,
     Gauge,
     Info,
+    Plus,
     RefreshCw,
+    Scale,
     Search,
     Sparkles,
     Target,
+    X,
   } from "@lucide/svelte";
+  import ModelComparison from "$lib/components/ModelComparison.svelte";
   import ModelDetail from "$lib/components/ModelDetail.svelte";
   import PriceChange from "$lib/components/PriceChange.svelte";
   import RecommendationCard from "$lib/components/RecommendationCard.svelte";
   import SourcePill from "$lib/components/SourcePill.svelte";
   import ValueChart from "$lib/components/ValueChart.svelte";
   import { compactNumber, formatPrice, formatSyncTime, money, providerName } from "$lib/format";
+  import { rankBudgetModels } from "$lib/scoring";
   import type { RadarData, RadarModel } from "$lib/types";
   import type { PageData } from "./$types";
 
   type Filter = "all" | "cheap" | "state-of-the-art" | "changed";
   type Sort = "rank" | "value" | "price";
+  const RECOMMENDATION_COUNT = 5;
+  const COMPARISON_LIMIT = 4;
 
   let { data }: { data: PageData } = $props();
   let refreshedRadar = $state<RadarData | null>(null);
@@ -34,28 +43,33 @@
   let inputMillions = $state(10);
   let outputMillions = $state(2);
   let selectedModel = $state<RadarModel | null>(null);
+  let comparisonIds = $state<string[]>([]);
+  let comparisonOpen = $state(false);
   let refreshing = $state(false);
   let refreshError = $state<string | null>(null);
 
   let safeInputMillions = $derived(Number.isFinite(inputMillions) ? Math.max(0, inputMillions) : 0);
   let safeOutputMillions = $derived(Number.isFinite(outputMillions) ? Math.max(0, outputMillions) : 0);
+  let comparisonModels = $derived(
+    comparisonIds
+      .map((modelId) => radar.models.find((model) => model.id === modelId))
+      .filter((model): model is RadarModel => model !== undefined),
+  );
   let rankedModels = $derived(radar.models.filter((model) => model.intelligence !== null));
-  let bestQuality = $derived(
+  let topQuality = $derived(
     [...rankedModels].sort(
       (left, right) =>
         (left.intelligenceRank ?? Infinity) -
         (right.intelligenceRank ?? Infinity),
-    )[0] ?? null,
+    ).slice(0, RECOMMENDATION_COUNT),
   );
-  let bestCheap = $derived(
-    [...rankedModels]
-      .filter((model) => model.isCheap)
-      .sort((left, right) => (right.intelligence ?? 0) - (left.intelligence ?? 0))[0] ?? null,
+  let topBudget = $derived(
+    rankBudgetModels(rankedModels).slice(0, RECOMMENDATION_COUNT),
   );
-  let bestValue = $derived(
+  let topValue = $derived(
     [...rankedModels].sort(
       (left, right) => (right.valueScore ?? 0) - (left.valueScore ?? 0),
-    )[0] ?? null,
+    ).slice(0, RECOMMENDATION_COUNT),
   );
   let visibleModels = $derived.by(() => {
     const query = search.trim().toLowerCase();
@@ -79,6 +93,24 @@
       });
   });
 
+  function toggleComparison(modelId: string) {
+    if (comparisonIds.includes(modelId)) {
+      removeComparison(modelId);
+      return;
+    }
+    if (comparisonIds.length < COMPARISON_LIMIT) comparisonIds = [...comparisonIds, modelId];
+  }
+
+  function removeComparison(modelId: string) {
+    comparisonIds = comparisonIds.filter((candidate) => candidate !== modelId);
+    if (comparisonIds.length < 2) comparisonOpen = false;
+  }
+
+  function clearComparison() {
+    comparisonIds = [];
+    comparisonOpen = false;
+  }
+
   async function refresh() {
     refreshing = true;
     refreshError = null;
@@ -90,6 +122,11 @@
       const payload = (await response.json()) as RadarData & { error?: string };
       if (!response.ok) throw new Error(payload.error || "Refresh failed");
       refreshedRadar = payload;
+      const availableComparisonIds = comparisonIds.filter((modelId) =>
+        payload.models.some((model) => model.id === modelId),
+      );
+      comparisonIds = availableComparisonIds;
+      if (availableComparisonIds.length < 2) comparisonOpen = false;
     } catch (error) {
       refreshError = error instanceof Error ? error.message : "Refresh failed";
     } finally {
@@ -185,11 +222,11 @@
       </section>
 
       <section class="section-block recommendations-section">
-        <div class="section-heading"><div><span class="section-kicker">TODAY'S SHORTLIST</span><h2>Three ways to choose</h2></div><p>Capability, restraint, or the strongest balance of both.</p></div>
+        <div class="section-heading"><div><span class="section-kicker">TODAY'S SHORTLIST</span><h2>Three ways to choose</h2></div><p>Five ranked picks for capability, affordability, and the strongest balance of both.</p></div>
         <div class="recommendation-grid">
-          <RecommendationCard eyebrow="BEST CAPABILITY" model={bestQuality} tone="ink" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
-          <RecommendationCard eyebrow="BEST UNDER BUDGET" model={bestCheap} tone="lime" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
-          <RecommendationCard eyebrow="BEST BALANCE" model={bestValue} tone="paper" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
+          <RecommendationCard eyebrow="BEST CAPABILITY" models={topQuality} tone="ink" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
+          <RecommendationCard eyebrow="BEST UNDER BUDGET" models={topBudget} tone="lime" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
+          <RecommendationCard eyebrow="BEST BALANCE" models={topValue} tone="paper" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
         </div>
       </section>
 
@@ -219,17 +256,33 @@
 
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Model</th><th>AA rank</th><th>Intelligence</th><th>Input / 1M</th><th>Output / 1M</th><th>Price move</th><th>Your monthly</th><th aria-label="Open details"></th></tr></thead>
+            <thead><tr><th>Model</th><th>AA rank</th><th>Intelligence</th><th>Input / 1M</th><th>Output / 1M</th><th>Price move</th><th>Your monthly</th><th aria-label="Model actions"></th></tr></thead>
             <tbody>
               {#each visibleModels as model (model.id)}
                 {@const monthlyCost = model.inputPrice * safeInputMillions + model.outputPrice * safeOutputMillions}
+                {@const inComparison = comparisonIds.includes(model.id)}
                 <tr>
                   <td><button class="model-identity" onclick={() => selectedModel = model}><span class="provider-monogram small">{providerName(model.provider).slice(0, 1)}</span><span><strong>{model.name}</strong><small>{providerName(model.provider)} / {compactNumber.format(model.contextLength)} ctx</small></span></button></td>
                   <td>{model.intelligenceRank ? `#${model.intelligenceRank}` : "-"}</td>
                   <td><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></td>
                   <td>{formatPrice(model.inputPrice)}</td><td>{formatPrice(model.outputPrice)}</td>
                   <td><PriceChange value={model.priceChangePercent} /></td><td><strong>{money.format(monthlyCost)}</strong></td>
-                  <td><button class="row-action" onclick={() => selectedModel = model} aria-label={`Inspect ${model.name}`}><span aria-hidden="true">&gt;</span></button></td>
+                  <td>
+                    <div class="row-actions">
+                      <button
+                        class="row-action comparison-toggle"
+                        class:active={inComparison}
+                        onclick={() => toggleComparison(model.id)}
+                        disabled={!inComparison && comparisonIds.length >= COMPARISON_LIMIT}
+                        aria-pressed={inComparison}
+                        aria-label={inComparison ? `Remove ${model.name} from comparison` : `Add ${model.name} to comparison`}
+                        title={inComparison ? "Remove from comparison" : comparisonIds.length >= COMPARISON_LIMIT ? `Compare up to ${COMPARISON_LIMIT} models` : "Add to comparison"}
+                      >
+                        {#if inComparison}<Check size={14} />{:else}<Plus size={14} />{/if}
+                      </button>
+                      <button class="row-action" onclick={() => selectedModel = model} aria-label={`Inspect ${model.name}`} title="Open details"><ChevronRight size={14} /></button>
+                    </div>
+                  </td>
                 </tr>
               {/each}
             </tbody>
@@ -260,5 +313,24 @@
 
   {#if selectedModel}
     <ModelDetail model={selectedModel} inputMillions={safeInputMillions} outputMillions={safeOutputMillions} onclose={() => selectedModel = null} />
+  {/if}
+
+  {#if comparisonModels.length > 0}
+    <aside class="comparison-tray" aria-label="Selected models for comparison" aria-live="polite">
+      <div class="comparison-tray-title"><Scale size={17} /><strong>Compare</strong><span>{comparisonModels.length}/{COMPARISON_LIMIT}</span></div>
+      <div class="comparison-chips">
+        {#each comparisonModels as model (model.id)}
+          <button onclick={() => removeComparison(model.id)} title={`Remove ${model.name}`}><span>{model.name}</span><X size={12} /></button>
+        {/each}
+      </div>
+      <div class="comparison-tray-actions">
+        <button class="comparison-clear" onclick={clearComparison}>Clear</button>
+        <button class="comparison-open" onclick={() => comparisonOpen = true} disabled={comparisonModels.length < 2}>Compare models</button>
+      </div>
+    </aside>
+  {/if}
+
+  {#if comparisonOpen && comparisonModels.length >= 2}
+    <ModelComparison models={comparisonModels} inputMillions={safeInputMillions} outputMillions={safeOutputMillions} onremove={removeComparison} onclose={() => comparisonOpen = false} />
   {/if}
 </div>

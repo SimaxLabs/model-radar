@@ -20,7 +20,7 @@
 
 - OpenRouter is the sole upstream source for pricing and embedded Artificial Analysis benchmark indices. Artificial Analysis must remain attributed in the UI.
 - Free, zero-priced, and dynamic/negative-priced routes are excluded in `src/lib/server/openrouter.ts`.
-- The documented blend is 75% input plus 25% output. `CHEAP_MODEL_MAX_PRICE` defaults to `$1/M`; frontier means the top 10 paid models by Intelligence Index; value is 75% intelligence and 25% log-price efficiency.
+- The documented blend is 75% input plus 25% output. `CHEAP_MODEL_MAX_PRICE` defaults to `$1/M`; frontier means the top 10 paid models by Intelligence Index; value is 75% intelligence and 25% log-price efficiency; budget recommendations use 50% intelligence and 50% log-price affordability among cheap models.
 - Benchmark indices are attached directly to OpenRouter model IDs. Models without an Intelligence Index remain unranked; do not scrape or fabricate missing scores.
 
 ## Caching And Sync

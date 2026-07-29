@@ -522,7 +522,7 @@ a {
 
 .recommendation-card {
   min-width: 0;
-  min-height: 238px;
+  min-height: 390px;
   display: flex;
   flex-direction: column;
   padding: 22px;
@@ -560,11 +560,64 @@ a {
   color: #536313;
 }
 
+.recommendation-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin: 13px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recommendation-item {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  flex: 1;
+  padding: 14px 0;
+  border-top: 1px solid #dddcd5;
+}
+
+.recommendation-ink .recommendation-item {
+  border-color: #3a424b;
+}
+
+.recommendation-lime .recommendation-item {
+  border-color: #a7c335;
+}
+
+.recommendation-rank {
+  padding-top: 7px;
+  color: #94958f;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.recommendation-ink .recommendation-rank {
+  color: #717a82;
+}
+
+.recommendation-lime .recommendation-rank {
+  color: #64751c;
+}
+
+.recommendation-body,
+.recommendation-heading > div {
+  min-width: 0;
+}
+
 .recommendation-heading {
   display: flex;
   align-items: center;
-  gap: 13px;
-  margin-top: 30px;
+  gap: 9px;
+}
+
+.recommendation-item .provider-monogram {
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
 }
 
 .provider-monogram {
@@ -603,14 +656,14 @@ a {
   overflow: hidden;
   margin: 0;
   font-family: Charter, "Iowan Old Style", Georgia, serif;
-  font-size: 20px;
+  font-size: 15px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .recommendation-heading p {
-  margin: 3px 0 0;
+  margin: 2px 0 0;
   color: #82847e;
   font-size: 10px;
 }
@@ -627,8 +680,7 @@ a {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin-top: auto;
-  padding-top: 23px;
+  margin-top: 11px;
 }
 
 .recommendation-stats div {
@@ -652,16 +704,16 @@ a {
   display: block;
   overflow: hidden;
   color: #81827c;
-  font-size: 8px;
+  font-size: 7px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .recommendation-stats strong {
   display: block;
-  margin-top: 6px;
+  margin-top: 4px;
   font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 13px;
+  font-size: 10px;
 }
 
 .recommendation-ink .recommendation-stats span {
@@ -1012,10 +1064,132 @@ tbody tr:hover {
   cursor: pointer;
 }
 
-.row-action:hover {
+.row-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.row-action:hover:not(:disabled),
+.row-action.active {
   border-color: var(--ink);
   background: var(--ink);
   color: white;
+}
+
+.row-action.comparison-toggle.active {
+  border-color: #91a923;
+  background: var(--lime);
+  color: var(--ink);
+}
+
+.row-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.comparison-tray {
+  position: fixed;
+  left: 244px;
+  right: 24px;
+  bottom: 18px;
+  z-index: 50;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 11px 12px;
+  border: 1px solid #3b444d;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ink) 96%, transparent);
+  color: white;
+  box-shadow: 0 16px 45px rgba(12, 15, 18, 0.25);
+  backdrop-filter: blur(10px);
+}
+
+.comparison-tray-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  color: var(--lime);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.comparison-tray-title span {
+  color: #828a91;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 9px;
+}
+
+.comparison-chips {
+  min-width: 0;
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  overflow-x: auto;
+}
+
+.comparison-chips button {
+  min-width: 0;
+  max-width: 190px;
+  height: 31px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 1 auto;
+  padding: 0 9px;
+  border: 1px solid #424a52;
+  border-radius: 99px;
+  background: #252c34;
+  color: #d8dadd;
+  cursor: pointer;
+}
+
+.comparison-chips button span {
+  overflow: hidden;
+  font-size: 9px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comparison-chips button svg {
+  flex: 0 0 auto;
+  color: #7f878e;
+}
+
+.comparison-tray-actions {
+  display: flex;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+
+.comparison-tray-actions button {
+  height: 33px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.comparison-clear {
+  border: 1px solid #424a52;
+  background: transparent;
+  color: #aeb3b7;
+}
+
+.comparison-open {
+  border: 1px solid var(--lime);
+  background: var(--lime);
+  color: var(--ink);
+}
+
+.comparison-open:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
 }
 
 .no-results {
@@ -1144,6 +1318,211 @@ footer a {
 .detail-panel::backdrop {
   background: rgba(12, 15, 18, 0.48);
   backdrop-filter: blur(3px);
+}
+
+.comparison-panel {
+  width: min(1180px, calc(100% - 32px));
+  max-width: none;
+  max-height: calc(100% - 32px);
+  overflow: hidden;
+  margin: auto;
+  padding: 0;
+  border: 1px solid #c9c7bd;
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.28);
+}
+
+.comparison-panel::backdrop {
+  background: rgba(12, 15, 18, 0.56);
+  backdrop-filter: blur(4px);
+}
+
+.comparison-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 26px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.comparison-header h2 {
+  margin: 5px 0 0;
+  font-family: Charter, "Iowan Old Style", Georgia, serif;
+  font-size: 31px;
+  font-weight: 500;
+}
+
+.comparison-header p {
+  margin: 5px 0 0;
+  color: #858680;
+  font-size: 10px;
+}
+
+.comparison-close {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: #6f716d;
+  cursor: pointer;
+}
+
+.comparison-close:hover {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: white;
+}
+
+.comparison-scroll {
+  max-height: calc(100vh - 154px);
+  overflow: auto;
+  padding: 0 26px 26px;
+}
+
+.comparison-table {
+  min-width: 760px;
+  table-layout: fixed;
+  white-space: normal;
+}
+
+.comparison-table th,
+.comparison-table td {
+  height: auto;
+  padding: 12px 14px;
+  border-right: 1px solid #dfddd5;
+  border-bottom: 1px solid #dfddd5;
+  vertical-align: middle;
+}
+
+.comparison-table tr > :last-child {
+  border-right: 0;
+}
+
+.comparison-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  width: 22%;
+  padding-top: 17px;
+  padding-bottom: 17px;
+  background: var(--paper);
+  vertical-align: top;
+}
+
+.comparison-table thead th:first-child,
+.comparison-table tbody th:not([colspan]) {
+  width: 150px;
+}
+
+.comparison-model {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.comparison-model > div {
+  min-width: 0;
+}
+
+.comparison-model span,
+.comparison-model strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.comparison-model span {
+  color: #898a84;
+  font-size: 8px;
+  white-space: nowrap;
+}
+
+.comparison-model strong {
+  margin-top: 5px;
+  color: var(--ink);
+  font-family: Charter, "Iowan Old Style", Georgia, serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.comparison-model button {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: #969791;
+  cursor: pointer;
+}
+
+.comparison-table thead a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  color: #777873;
+  font-size: 8px;
+  letter-spacing: 0;
+  text-decoration: none;
+  text-transform: none;
+}
+
+.comparison-table .comparison-group th {
+  padding: 8px 14px;
+  border-right: 0;
+  background: var(--ink-soft);
+  color: var(--lime);
+  font-size: 8px;
+  letter-spacing: 0.13em;
+}
+
+.comparison-table tbody th:not([colspan]) {
+  background: #efeee7;
+  color: #686a66;
+  font-size: 9px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.comparison-table td {
+  position: relative;
+  background: rgba(255, 255, 255, 0.34);
+  text-align: left;
+}
+
+.comparison-table td strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.comparison-table td > span {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  color: #677a15;
+  font-size: 6px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.comparison-table td.comparison-best {
+  background: #edf5c9;
+  box-shadow: inset 0 0 0 1px rgba(155, 183, 37, 0.24);
 }
 
 @keyframes fade-in { from { opacity: 0; } }
@@ -1322,10 +1701,10 @@ footer a {
     display: none;
   }
 
-  th:nth-child(4),
-  td:nth-child(4),
-  th:nth-child(5),
-  td:nth-child(5) {
+  .table-wrap > table th:nth-child(4),
+  .table-wrap > table td:nth-child(4),
+  .table-wrap > table th:nth-child(5),
+  .table-wrap > table td:nth-child(5) {
     display: none;
   }
 }
@@ -1337,6 +1716,11 @@ footer a {
 
   .main-content {
     margin-left: 0;
+  }
+
+  .comparison-tray {
+    left: 20px;
+    right: 20px;
   }
 
   .topbar {
@@ -1431,6 +1815,50 @@ footer a {
 }
 
 @media (max-width: 620px) {
+  .comparison-tray {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    flex-wrap: wrap;
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .comparison-chips {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .comparison-tray-actions {
+    margin-left: auto;
+  }
+
+  .comparison-tray-actions button {
+    padding-inline: 10px;
+  }
+
+  .comparison-panel {
+    width: calc(100% - 12px);
+    max-height: calc(100% - 12px);
+  }
+
+  .comparison-header {
+    padding: 20px 18px 16px;
+  }
+
+  .comparison-header h2 {
+    font-size: 26px;
+  }
+
+  .comparison-scroll {
+    max-height: calc(100vh - 132px);
+    padding: 0 12px 18px;
+  }
+
+  .comparison-table {
+    min-width: 720px;
+  }
+
   .source-banner {
     align-items: flex-start;
   }
@@ -1511,10 +1939,10 @@ footer a {
     flex: 0 0 auto;
   }
 
-  th:nth-child(2),
-  td:nth-child(2),
-  th:nth-child(6),
-  td:nth-child(6) {
+  .table-wrap > table th:nth-child(2),
+  .table-wrap > table td:nth-child(2),
+  .table-wrap > table th:nth-child(6),
+  .table-wrap > table td:nth-child(6) {
     display: none;
   }
 
