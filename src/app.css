@@ -5,7 +5,7 @@
   --paper-deep: #e9e7de;
   --white: #fbfaf6;
   --line: #d8d6cc;
-  --muted: #77766f;
+  --muted: #62635e;
   --lime: #c9ea4b;
   --lime-dark: #9bb725;
   --coral: #f06942;
@@ -26,7 +26,8 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
-  font-size: 14px;
+  font-size: 15px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -133,9 +134,10 @@ a {
 
 .eyebrow,
 .section-kicker {
-  color: #7f817f;
-  font-size: 10px;
+  color: #696b68;
+  font-size: 11px;
   font-weight: 800;
+  line-height: 1.3;
   letter-spacing: 0.15em;
 }
 
@@ -152,17 +154,17 @@ a {
 
 .sidebar-note p {
   margin: 7px 0 0;
-  color: #92979a;
-  font-size: 11px;
+  color: #aeb3b6;
+  font-size: 12px;
   line-height: 1.55;
 }
 
 .sidebar-footer {
   display: flex;
   justify-content: space-between;
-  color: #656c72;
+  color: #858c91;
   font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.08em;
 }
 
@@ -194,9 +196,9 @@ a {
   display: flex;
   align-items: center;
   gap: 15px;
-  color: #74756f;
+  color: #656661;
   font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.11em;
 }
 
@@ -221,8 +223,8 @@ a {
   border: 1px solid var(--line);
   border-radius: 99px;
   background: rgba(255, 255, 255, 0.45);
-  color: #595b57;
-  font-size: 10px;
+  color: #4e504c;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -300,7 +302,7 @@ a {
 
 .source-banner p {
   margin: 3px 0 0;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -314,7 +316,7 @@ a {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -392,8 +394,8 @@ a {
 .token-calculator label > span {
   display: block;
   margin-bottom: 5px;
-  color: #939a9f;
-  font-size: 10px;
+  color: #b1b7bb;
+  font-size: 11px;
 }
 
 .token-calculator label div {
@@ -417,16 +419,16 @@ a {
 
 .token-calculator b {
   padding-right: 11px;
-  color: #858d93;
-  font-size: 10px;
+  color: #a7aeb3;
+  font-size: 11px;
   font-weight: 500;
 }
 
 .token-calculator > p {
   margin: 13px 0 0;
-  color: #828990;
-  font-size: 9px;
-  line-height: 1.45;
+  color: #a3a9ae;
+  font-size: 11px;
+  line-height: 1.55;
 }
 
 .metrics-grid {
@@ -437,7 +439,7 @@ a {
 
 .metric-card {
   min-width: 0;
-  padding: 25px 2.2vw 23px;
+  padding: 29px 2.2vw 27px;
   border-right: 1px solid var(--line);
 }
 
@@ -449,8 +451,8 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #6e706c;
-  font-size: 9px;
+  color: #5f615d;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.12em;
 }
@@ -468,16 +470,14 @@ a {
 }
 
 .metric-card p {
-  overflow: hidden;
-  margin: 3px 0 0;
-  color: #858680;
-  font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin: 5px 0 0;
+  color: #666762;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .section-block {
-  padding: 54px 0;
+  padding: 68px 0;
   border-bottom: 1px solid var(--line);
 }
 
@@ -486,22 +486,23 @@ a {
   align-items: end;
   justify-content: space-between;
   gap: 30px;
-  margin-bottom: 24px;
+  margin-bottom: 30px;
 }
 
 .section-heading h2 {
   margin: 7px 0 0;
   font-family: Charter, "Iowan Old Style", Georgia, serif;
-  font-size: 31px;
+  font-size: 34px;
   font-weight: 500;
   letter-spacing: -0.025em;
 }
 
 .section-heading > p {
-  max-width: 350px;
+  max-width: 410px;
   margin: 0;
-  color: #777873;
-  font-size: 11px;
+  color: #62635f;
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .section-heading.compact {
@@ -517,7 +518,7 @@ a {
 .recommendation-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 16px;
 }
 
 .recommendation-card {
@@ -525,7 +526,7 @@ a {
   min-height: 390px;
   display: flex;
   flex-direction: column;
-  padding: 22px;
+  padding: 25px;
   border: 1px solid var(--line);
   border-radius: 9px;
   background: var(--white);
@@ -546,8 +547,8 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #777971;
-  font-size: 9px;
+  color: #626460;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.12em;
 }
@@ -564,7 +565,7 @@ a {
   display: flex;
   flex: 1;
   flex-direction: column;
-  margin: 13px 0 0;
+  margin: 16px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -572,10 +573,10 @@ a {
 .recommendation-item {
   min-width: 0;
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 27px minmax(0, 1fr);
+  gap: 12px;
   flex: 1;
-  padding: 14px 0;
+  padding: 17px 0;
   border-top: 1px solid #dddcd5;
 }
 
@@ -589,14 +590,14 @@ a {
 
 .recommendation-rank {
   padding-top: 7px;
-  color: #94958f;
+  color: #737570;
   font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
 }
 
 .recommendation-ink .recommendation-rank {
-  color: #717a82;
+  color: #a5adb3;
 }
 
 .recommendation-lime .recommendation-rank {
@@ -656,7 +657,7 @@ a {
   overflow: hidden;
   margin: 0;
   font-family: Charter, "Iowan Old Style", Georgia, serif;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -664,12 +665,12 @@ a {
 
 .recommendation-heading p {
   margin: 2px 0 0;
-  color: #82847e;
-  font-size: 10px;
+  color: #666863;
+  font-size: 11px;
 }
 
 .recommendation-ink .recommendation-heading p {
-  color: #939aa0;
+  color: #b2b8bc;
 }
 
 .recommendation-lime .recommendation-heading p {
@@ -680,7 +681,7 @@ a {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin-top: 11px;
+  margin-top: 13px;
 }
 
 .recommendation-stats div {
@@ -703,21 +704,21 @@ a {
 .recommendation-stats span {
   display: block;
   overflow: hidden;
-  color: #81827c;
-  font-size: 7px;
+  color: #686a65;
+  font-size: 9px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .recommendation-stats strong {
   display: block;
-  margin-top: 4px;
+  margin-top: 5px;
   font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .recommendation-ink .recommendation-stats span {
-  color: #899198;
+  color: #aab1b6;
 }
 
 .recommendation-lime .recommendation-stats span {
@@ -730,7 +731,7 @@ a {
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  color: #858680;
+  color: #666762;
 }
 
 .recommendation-empty strong {
@@ -743,8 +744,8 @@ a {
 .recommendation-empty p {
   max-width: 240px;
   margin: 5px 0 0;
-  font-size: 10px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .recommendation-ink .recommendation-empty {
@@ -754,8 +755,8 @@ a {
 .chart-legend {
   display: flex;
   gap: 17px;
-  color: #757670;
-  font-size: 9px;
+  color: #62635f;
+  font-size: 10px;
 }
 
 .chart-legend span {
@@ -802,9 +803,9 @@ a {
 }
 
 .chart-axis-title {
-  fill: #8a8b85;
+  fill: #686a65;
   font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-anchor: middle;
@@ -849,15 +850,15 @@ a {
 .chart-empty p {
   margin: 6px 0 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .axis-labels {
   display: flex;
   justify-content: space-between;
   margin-top: 8px;
-  color: #90918c;
-  font-size: 8px;
+  color: #70716c;
+  font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.1em;
 }
@@ -872,8 +873,8 @@ a {
 }
 
 .search-box {
-  width: 210px;
-  height: 36px;
+  width: 230px;
+  height: 40px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -881,7 +882,7 @@ a {
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--white);
-  color: #969690;
+  color: #777873;
 }
 
 .search-box input {
@@ -890,41 +891,41 @@ a {
   outline: 0;
   background: transparent;
   color: var(--ink);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .model-tools select {
-  height: 36px;
+  height: 40px;
   padding: 0 28px 0 11px;
   border: 1px solid var(--line);
   border-radius: 6px;
   outline: 0;
   background: var(--white);
   color: #565854;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .filter-row {
   display: flex;
   gap: 7px;
-  margin-bottom: 13px;
+  margin-bottom: 17px;
 }
 
 .filter-row button {
-  height: 31px;
-  padding: 0 11px;
+  height: 34px;
+  padding: 0 13px;
   border: 1px solid var(--line);
   border-radius: 99px;
   background: transparent;
-  color: #6e706b;
-  font-size: 9px;
+  color: #5e605c;
+  font-size: 10px;
   font-weight: 700;
   cursor: pointer;
 }
 
 .filter-row button span {
   margin-left: 4px;
-  color: #a0a19c;
+  color: #747570;
 }
 
 .filter-row button.active {
@@ -951,11 +952,11 @@ table {
 }
 
 th {
-  height: 39px;
-  padding: 0 14px;
+  height: 44px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--line);
-  color: #858680;
-  font-size: 8px;
+  color: #696a65;
+  font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.09em;
   text-align: left;
@@ -963,12 +964,12 @@ th {
 }
 
 td {
-  height: 61px;
-  padding: 0 14px;
+  height: 69px;
+  padding: 0 16px;
   border-bottom: 1px solid #dfddd5;
   color: #4e504d;
   font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 tbody tr:last-child td {
@@ -983,11 +984,19 @@ tbody tr:hover {
   background: rgba(255, 255, 255, 0.62);
 }
 
+.table-wrap > table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.table-wrap > table tbody tr:nth-child(even):hover {
+  background: rgba(255, 255, 255, 0.68);
+}
+
 .model-identity {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -1007,14 +1016,14 @@ tbody tr:hover {
 .model-identity strong {
   color: var(--ink);
   font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .model-identity small {
-  margin-top: 3px;
-  color: #92938d;
+  margin-top: 4px;
+  color: #747570;
   font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .intelligence-cell {
@@ -1044,17 +1053,17 @@ tbody tr:hover {
   align-items: center;
   gap: 3px;
   font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
 }
 
 .change-up { color: var(--red); }
 .change-down { color: var(--green); }
-.change-neutral { color: #969791; font-weight: 500; }
+.change-neutral { color: #71726d; font-weight: 500; }
 
 .row-action {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
   border: 1px solid var(--line);
@@ -1112,15 +1121,15 @@ tbody tr:hover {
   gap: 7px;
   flex: 0 0 auto;
   color: var(--lime);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .comparison-tray-title span {
-  color: #828a91;
+  color: #a0a7ac;
   font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .comparison-chips {
@@ -1134,7 +1143,7 @@ tbody tr:hover {
 .comparison-chips button {
   min-width: 0;
   max-width: 190px;
-  height: 31px;
+  height: 34px;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -1149,7 +1158,7 @@ tbody tr:hover {
 
 .comparison-chips button span {
   overflow: hidden;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1167,10 +1176,10 @@ tbody tr:hover {
 }
 
 .comparison-tray-actions button {
-  height: 33px;
+  height: 36px;
   padding: 0 12px;
   border-radius: 6px;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -1198,7 +1207,7 @@ tbody tr:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #92938d;
+  color: #73746f;
 }
 
 .no-results strong {
@@ -1210,14 +1219,14 @@ tbody tr:hover {
 
 .no-results p {
   margin: 4px 0 0;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .method-section {
   display: grid;
   grid-template-columns: 0.8fr 1.2fr;
-  gap: 7vw;
-  padding: 65px 4vw;
+  gap: 6vw;
+  padding: 76px 4vw;
   border-bottom: 1px solid var(--line);
   background: var(--paper-deep);
 }
@@ -1233,29 +1242,29 @@ tbody tr:hover {
 .method-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 27px 35px;
+  gap: 34px 42px;
 }
 
 .method-grid article {
   display: flex;
-  gap: 14px;
+  gap: 16px;
 }
 
 .method-grid article > span {
   color: var(--coral);
   font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
-}
-
-.method-grid strong {
   font-size: 11px;
 }
 
+.method-grid strong {
+  font-size: 13px;
+}
+
 .method-grid p {
-  margin: 5px 0 0;
-  color: #71726e;
-  font-size: 10px;
-  line-height: 1.55;
+  margin: 7px 0 0;
+  color: #62635f;
+  font-size: 12px;
+  line-height: 1.65;
 }
 
 footer {
@@ -1263,9 +1272,9 @@ footer {
   align-items: center;
   justify-content: space-between;
   gap: 30px;
-  padding: 28px 0 31px;
-  color: #858680;
-  font-size: 9px;
+  padding: 34px 0 38px;
+  color: #686964;
+  font-size: 11px;
 }
 
 .footer-brand {
@@ -1356,9 +1365,9 @@ footer a {
 }
 
 .comparison-header p {
-  margin: 5px 0 0;
-  color: #858680;
-  font-size: 10px;
+  margin: 7px 0 0;
+  color: #696a65;
+  font-size: 12px;
 }
 
 .comparison-close {
@@ -1395,7 +1404,7 @@ footer a {
 .comparison-table th,
 .comparison-table td {
   height: auto;
-  padding: 12px 14px;
+  padding: 14px 16px;
   border-right: 1px solid #dfddd5;
   border-bottom: 1px solid #dfddd5;
   vertical-align: middle;
@@ -1441,8 +1450,8 @@ footer a {
 }
 
 .comparison-model span {
-  color: #898a84;
-  font-size: 8px;
+  color: #6f706b;
+  font-size: 10px;
   white-space: nowrap;
 }
 
@@ -1450,7 +1459,7 @@ footer a {
   margin-top: 5px;
   color: var(--ink);
   font-family: Charter, "Iowan Old Style", Georgia, serif;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   line-height: 1.15;
 }
@@ -1465,7 +1474,7 @@ footer a {
   border: 1px solid var(--line);
   border-radius: 50%;
   background: transparent;
-  color: #969791;
+  color: #747570;
   cursor: pointer;
 }
 
@@ -1474,26 +1483,26 @@ footer a {
   align-items: center;
   gap: 4px;
   margin-top: 10px;
-  color: #777873;
-  font-size: 8px;
+  color: #5f615d;
+  font-size: 10px;
   letter-spacing: 0;
   text-decoration: none;
   text-transform: none;
 }
 
 .comparison-table .comparison-group th {
-  padding: 8px 14px;
+  padding: 10px 16px;
   border-right: 0;
   background: var(--ink-soft);
   color: var(--lime);
-  font-size: 8px;
+  font-size: 9px;
   letter-spacing: 0.13em;
 }
 
 .comparison-table tbody th:not([colspan]) {
   background: #efeee7;
   color: #686a66;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0;
   text-transform: none;
 }
@@ -1506,7 +1515,7 @@ footer a {
 
 .comparison-table td strong {
   color: var(--ink);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .comparison-table td > span {
@@ -1514,7 +1523,7 @@ footer a {
   top: 5px;
   right: 6px;
   color: #677a15;
-  font-size: 6px;
+  font-size: 9px;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1536,8 +1545,8 @@ footer a {
   border: 0;
   border-bottom: 1px solid var(--line);
   background: transparent;
-  color: #777873;
-  font-size: 10px;
+  color: #5f615d;
+  font-size: 11px;
   cursor: pointer;
 }
 
@@ -1556,8 +1565,8 @@ footer a {
 
 .detail-title p {
   margin: 0 0 2px;
-  color: #858680;
-  font-size: 10px;
+  color: #686a65;
+  font-size: 11px;
 }
 
 .detail-title h2 {
@@ -1574,11 +1583,11 @@ footer a {
 }
 
 .detail-badges > span {
-  padding: 5px 8px;
+  padding: 6px 9px;
   border: 1px solid var(--line);
   border-radius: 99px;
-  color: #777873;
-  font-size: 8px;
+  color: #5f615d;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -1604,7 +1613,7 @@ footer a {
 
 .detail-callout span {
   color: var(--lime);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1620,8 +1629,8 @@ footer a {
 
 .detail-callout p {
   margin: 6px 0 0;
-  color: #929aa0;
-  font-size: 9px;
+  color: #b3b9bd;
+  font-size: 11px;
 }
 
 .detail-section {
@@ -1634,7 +1643,7 @@ footer a {
 }
 
 .detail-list div {
-  min-height: 44px;
+  min-height: 50px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1643,15 +1652,15 @@ footer a {
 }
 
 .detail-list dt {
-  color: #777873;
-  font-size: 10px;
+  color: #5f615d;
+  font-size: 11px;
 }
 
 .detail-list dd {
   margin: 0;
   color: var(--ink);
   font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-align: right;
 }
@@ -1668,11 +1677,11 @@ footer a {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 39px;
+  height: 43px;
   border: 1px solid var(--line);
   border-radius: 6px;
   color: var(--ink);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   text-decoration: none;
 }
@@ -1683,22 +1692,43 @@ footer a {
   color: white;
 }
 
+@media (max-width: 1240px) {
+  .recommendation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recommendation-card {
+    min-height: 0;
+  }
+
+  .recommendation-body {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) minmax(330px, 0.9fr);
+    align-items: center;
+    gap: 28px;
+  }
+
+  .recommendation-stats {
+    margin-top: 0;
+  }
+}
+
 @media (max-width: 1100px) {
   .hero {
     gap: 4vw;
     padding-inline: 1vw;
   }
 
-  .recommendation-stats {
+  .metrics-grid {
     grid-template-columns: 1fr 1fr;
   }
 
-  .recommendation-stats div:nth-child(2) {
+  .metric-card:nth-child(2) {
     border-right: 0;
   }
 
-  .recommendation-stats div:last-child {
-    display: none;
+  .metric-card:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--line);
   }
 
   .table-wrap > table th:nth-child(4),
@@ -1872,7 +1902,7 @@ footer a {
   }
 
   .hero-copy > p {
-    font-size: 13px;
+    font-size: 15px;
   }
 
   .token-calculator {
@@ -1893,7 +1923,7 @@ footer a {
   }
 
   .section-block {
-    padding: 42px 0;
+    padding: 52px 0;
   }
 
   .section-heading {
@@ -1923,11 +1953,24 @@ footer a {
 
   .model-tools {
     width: 100%;
+    flex-wrap: wrap;
   }
 
   .search-box {
     width: auto;
     flex: 1;
+  }
+
+  .model-tools select {
+    flex: 1 0 100%;
+  }
+
+  .recommendation-body {
+    display: block;
+  }
+
+  .recommendation-stats {
+    margin-top: 13px;
   }
 
   .filter-row {
