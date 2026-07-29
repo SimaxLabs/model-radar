@@ -18,15 +18,14 @@
 
 ## Data Rules
 
-- OpenRouter is the sole pricing source. Artificial Analysis contributes benchmark/ranking data only and must remain attributed in the UI.
+- OpenRouter is the sole upstream source for pricing and embedded Artificial Analysis benchmark indices. Artificial Analysis must remain attributed in the UI.
 - Free, zero-priced, and dynamic/negative-priced routes are excluded in `src/lib/server/openrouter.ts`.
-- The documented blend is 75% input plus 25% output. `CHEAP_MODEL_MAX_PRICE` defaults to `$1/M`; frontier means the top 10 matched models; value is 68% intelligence, 22% log-price efficiency, and 10% speed.
-- Matching is creator-constrained and name-normalized in `src/lib/matching.ts`. Update `tests/matching.test.ts` when changing aliases or confidence behavior.
-- Missing `ARTIFICIAL_ANALYSIS_API_KEY` intentionally leaves ranking-dependent fields empty while OpenRouter pricing remains usable; do not replace this with scraped or fabricated leaderboard data.
+- The documented blend is 75% input plus 25% output. `CHEAP_MODEL_MAX_PRICE` defaults to `$1/M`; frontier means the top 10 paid models by Intelligence Index; value is 75% intelligence and 25% log-price efficiency.
+- Benchmark indices are attached directly to OpenRouter model IDs. Models without an Intelligence Index remain unranked; do not scrape or fabricate missing scores.
 
 ## Caching And Sync
 
-- Cache TTLs are deliberate: dashboard 5 minutes, OpenRouter 1 hour, Artificial Analysis 12 hours. In-flight requests are deduplicated.
+- Cache TTLs are deliberate: dashboard 5 minutes and OpenRouter 1 hour. In-flight requests are deduplicated.
 - Public `GET /api/radar` must use cached sources. Only authenticated `POST /api/sync` may call `getRadarData(true)` and bypass caches; `CRON_SECRET` must be at least 32 bytes.
 - Snapshots are UTC-dated and idempotent per model/day. Price changes compare against the most recent earlier date, not an earlier request on the same day.
 
@@ -39,7 +38,7 @@
 ## Security And Deployment
 
 - CSP nonces and allowed sources live in `svelte.config.js`; other response headers live in `src/hooks.server.ts`. Update CSP explicitly before adding an external browser resource.
-- `/api/health` is a liveness check and must not call OpenRouter, Artificial Analysis, or the database.
+- `/api/health` is a liveness check and must not call OpenRouter or the database.
 - Docker Compose binds `127.0.0.1:3000` by default for a same-host TLS reverse proxy. Local container storage must use `file:/app/data/model-radar.db`, not the workstation `.data` path.
 - The container root filesystem is read-only; only `/app/data` and `/tmp` are writable. Do not introduce writes elsewhere.
 - `model-radar-data` contains local price history. Never use `docker compose down --volumes` unless deletion is explicitly requested.

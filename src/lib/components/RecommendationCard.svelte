@@ -43,8 +43,8 @@
   {:else}
     <div class="recommendation-empty">
       <BrainCircuit size={25} />
-      <strong>Ranking data needed</strong>
-      <p>Add your Artificial Analysis API key to calculate this pick.</p>
+      <strong>Benchmark data unavailable</strong>
+      <p>OpenRouter has not supplied an Intelligence Index for this view.</p>
     </div>
   {/if}
 </article>

@@ -234,7 +234,6 @@ a {
   box-shadow: 0 0 0 3px rgba(40, 122, 87, 0.1);
 }
 
-.source-needs-key .status-dot,
 .source-unavailable .status-dot {
   background: #ca8730;
   box-shadow: 0 0 0 3px rgba(202, 135, 48, 0.12);
@@ -1278,16 +1277,9 @@ footer a {
   text-align: right;
 }
 
-.match-note {
-  margin: 11px 0 0;
-  color: #858680;
-  font-size: 9px;
-  line-height: 1.5;
-}
-
 .detail-links {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 8px;
   margin-top: 31px;
 }

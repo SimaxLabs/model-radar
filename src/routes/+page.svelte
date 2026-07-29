@@ -43,8 +43,8 @@
   let bestQuality = $derived(
     [...rankedModels].sort(
       (left, right) =>
-        (left.artificialAnalysisRank ?? Infinity) -
-        (right.artificialAnalysisRank ?? Infinity),
+        (left.intelligenceRank ?? Infinity) -
+        (right.intelligenceRank ?? Infinity),
     )[0] ?? null,
   );
   let bestCheap = $derived(
@@ -73,8 +73,8 @@
         if (sort === "price") return left.blendedPrice - right.blendedPrice;
         if (sort === "value") return (right.valueScore ?? -1) - (left.valueScore ?? -1);
         return (
-          (left.artificialAnalysisRank ?? Infinity) -
-          (right.artificialAnalysisRank ?? Infinity)
+          (left.intelligenceRank ?? Infinity) -
+          (right.intelligenceRank ?? Infinity)
         );
       });
   });
@@ -135,7 +135,7 @@
       </div>
       <div class="source-statuses">
         <SourcePill source={radar.sources.openRouter} />
-        <SourcePill source={radar.sources.artificialAnalysis} />
+        <SourcePill source={radar.sources.benchmarks} />
         <SourcePill source={radar.sources.database} />
         <button class="refresh-button" onclick={refresh} disabled={refreshing}>
           <RefreshCw size={15} class={refreshing ? "spinning" : undefined} /><span>{refreshing ? "Refreshing" : "Refresh"}</span>
@@ -144,14 +144,14 @@
     </header>
 
     <div class="page-wrap">
-      {#if radar.sources.artificialAnalysis.state !== "live"}
+      {#if radar.sources.benchmarks.state !== "live"}
         <div class="source-banner">
           <CircleAlert size={19} />
           <div>
-            <strong>{radar.sources.artificialAnalysis.label}</strong>
-            <p>{radar.sources.artificialAnalysis.detail} Pricing still comes live from OpenRouter. Add the key to <code>.env</code>.</p>
+            <strong>{radar.sources.benchmarks.label}</strong>
+            <p>{radar.sources.benchmarks.detail} Pricing remains available from OpenRouter.</p>
           </div>
-          <a href="https://artificialanalysis.ai/documentation" target="_blank" rel="noreferrer">API docs <ExternalLink size={14} /></a>
+          <a href="https://openrouter.ai/docs/api/api-reference/models/list-all-models-and-their-properties" target="_blank" rel="noreferrer">API docs <ExternalLink size={14} /></a>
         </div>
       {/if}
       {#if radar.sources.database.state !== "live"}
@@ -179,7 +179,7 @@
 
       <section class="metrics-grid" aria-label="Radar summary">
         <article class="metric-card"><div class="metric-card-top"><span>PAID MODELS</span><Database size={18} /></div><strong>{radar.summary.paidModels}</strong><p>Free and dynamic-price routes excluded</p></article>
-        <article class="metric-card"><div class="metric-card-top"><span>BENCHMARKED</span><BrainCircuit size={18} /></div><strong>{radar.summary.rankedModels}</strong><p>Matched to Artificial Analysis</p></article>
+        <article class="metric-card"><div class="metric-card-top"><span>BENCHMARKED</span><BrainCircuit size={18} /></div><strong>{radar.summary.rankedModels}</strong><p>Artificial Analysis via OpenRouter</p></article>
         <article class="metric-card"><div class="metric-card-top"><span>CHEAP PICKS</span><BadgeDollarSign size={18} /></div><strong>{radar.summary.cheapModels}</strong><p>At or below {money.format(radar.summary.cheapThreshold)} blended</p></article>
         <article class="metric-card"><div class="metric-card-top"><span>PRICE MOVES</span><Activity size={18} /></div><strong>{radar.summary.priceIncreases + radar.summary.priceDrops}</strong><p>{radar.summary.priceDrops} down / {radar.summary.priceIncreases} up</p></article>
       </section>
@@ -207,7 +207,7 @@
           <div><span class="section-kicker">MODEL INDEX</span><h2>Inspect every signal</h2></div>
           <div class="model-tools">
             <label class="search-box"><Search size={16} /><input bind:value={search} placeholder="Search models" aria-label="Search models" /></label>
-            <select bind:value={sort} aria-label="Sort models"><option value="rank">Sort: AA rank</option><option value="value">Sort: value</option><option value="price">Sort: price</option></select>
+            <select bind:value={sort} aria-label="Sort models"><option value="rank">Sort: intelligence</option><option value="value">Sort: value</option><option value="price">Sort: price</option></select>
           </div>
         </div>
         <div class="filter-row">
@@ -225,7 +225,7 @@
                 {@const monthlyCost = model.inputPrice * safeInputMillions + model.outputPrice * safeOutputMillions}
                 <tr>
                   <td><button class="model-identity" onclick={() => selectedModel = model}><span class="provider-monogram small">{providerName(model.provider).slice(0, 1)}</span><span><strong>{model.name}</strong><small>{providerName(model.provider)} / {compactNumber.format(model.contextLength)} ctx</small></span></button></td>
-                  <td>{model.artificialAnalysisRank ? `#${model.artificialAnalysisRank}` : "-"}</td>
+                  <td>{model.intelligenceRank ? `#${model.intelligenceRank}` : "-"}</td>
                   <td><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></td>
                   <td>{formatPrice(model.inputPrice)}</td><td>{formatPrice(model.outputPrice)}</td>
                   <td><PriceChange value={model.priceChangePercent} /></td><td><strong>{money.format(monthlyCost)}</strong></td>
@@ -245,14 +245,14 @@
         <div class="method-grid">
           <article><span>01</span><div><strong>Blended price</strong><p>Three input tokens to one output token, expressed per million total tokens.</p></div></article>
           <article><span>02</span><div><strong>Cheap</strong><p>Any paid model at or below {money.format(radar.summary.cheapThreshold)} blended. Change it with an environment variable.</p></div></article>
-          <article><span>03</span><div><strong>Frontier</strong><p>The top ten OpenRouter models matched by Artificial Analysis Intelligence Index.</p></div></article>
-          <article><span>04</span><div><strong>Value score</strong><p>68% intelligence, 22% price efficiency, and 10% output speed, normalized across matched models.</p></div></article>
+          <article><span>03</span><div><strong>Frontier</strong><p>The top ten paid OpenRouter models by Artificial Analysis Intelligence Index.</p></div></article>
+          <article><span>04</span><div><strong>Value score</strong><p>75% intelligence and 25% log-price efficiency, normalized across benchmarked models.</p></div></article>
         </div>
       </section>
 
       <footer>
         <div class="footer-brand"><Sparkles size={17} /> Model Radar</div>
-        <p>Pricing by <a href="https://openrouter.ai" target="_blank" rel="noreferrer">OpenRouter</a>. Benchmark data by <a href="https://artificialanalysis.ai" target="_blank" rel="noreferrer">Artificial Analysis</a>.</p>
+        <p>Pricing by <a href="https://openrouter.ai" target="_blank" rel="noreferrer">OpenRouter</a>. Benchmark data by <a href="https://artificialanalysis.ai" target="_blank" rel="noreferrer">Artificial Analysis</a>, supplied via OpenRouter.</p>
         <span>Built for better model decisions.</span>
       </footer>
     </div>

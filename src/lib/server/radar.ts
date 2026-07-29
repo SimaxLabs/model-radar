@@ -1,11 +1,9 @@
 import { env } from "$env/dynamic/private";
-import { fetchArtificialAnalysisModels } from "$lib/server/artificial-analysis";
 import { getDatabase } from "$lib/server/db/client";
 import { getPreviousPrices, saveDailySnapshot } from "$lib/server/db/snapshots";
 import { fetchOpenRouterModels } from "$lib/server/openrouter";
-import { matchArtificialAnalysisModel } from "$lib/matching";
 import { calculateBlendedPrice, calculatePriceChange } from "$lib/scoring";
-import type { ArtificialAnalysisModel, RadarData, RadarModel } from "$lib/types";
+import type { RadarData, RadarModel } from "$lib/types";
 
 const MILLION = 1_000_000;
 const STATE_OF_THE_ART_COUNT = 10;
@@ -35,39 +33,27 @@ function addValueScores(models: RadarModel[]) {
 
   const intelligence = ranked.map((model) => model.intelligence);
   const logPrices = ranked.map((model) => Math.log10(model.blendedPrice));
-  const speeds = ranked.map((model) => model.speed ?? 0);
   const intelligenceMin = Math.min(...intelligence);
   const intelligenceMax = Math.max(...intelligence);
   const priceMin = Math.min(...logPrices);
   const priceMax = Math.max(...logPrices);
-  const speedMin = Math.min(...speeds);
-  const speedMax = Math.max(...speeds);
 
   for (const model of ranked) {
     const quality = scale(model.intelligence, intelligenceMin, intelligenceMax);
     const affordability = 1 - scale(Math.log10(model.blendedPrice), priceMin, priceMax);
-    const speed = model.speed === null ? 0.5 : scale(model.speed, speedMin, speedMax);
-    model.valueScore = Math.round((quality * 0.68 + affordability * 0.22 + speed * 0.1) * 100);
+    model.valueScore = Math.round((quality * 0.75 + affordability * 0.25) * 100);
   }
 }
 
-function createRankMap(leaderboard: ArtificialAnalysisModel[]) {
-  const sorted = [...leaderboard].sort(
-    (left, right) =>
-      (right.evaluations.artificial_analysis_intelligence_index ?? -Infinity) -
-      (left.evaluations.artificial_analysis_intelligence_index ?? -Infinity),
-  );
-  return new Map(sorted.map((model, index) => [model.id, index + 1]));
+function finiteScore(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 async function buildRadarData(force: boolean): Promise<RadarData> {
   const capturedAt = new Date();
   const snapshotDate = capturedAt.toISOString().slice(0, 10);
   const cheapThreshold = positiveNumber(env.CHEAP_MODEL_MAX_PRICE, 1);
-  const [openRouterModels, artificialAnalysis] = await Promise.all([
-    fetchOpenRouterModels(force),
-    fetchArtificialAnalysisModels(force),
-  ]);
+  const openRouterModels = await fetchOpenRouterModels(force);
 
   let previousPrices = new Map<string, number>();
   let databaseStatus: RadarData["sources"]["database"] = {
@@ -92,15 +78,13 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
     };
   }
 
-  const rankMap = createRankMap(artificialAnalysis.models);
   const models: RadarModel[] = openRouterModels.map((model) => {
     const inputPrice = Number(model.pricing.prompt) * MILLION;
     const outputPrice = Number(model.pricing.completion) * MILLION;
     const blendedPrice = calculateBlendedPrice(inputPrice, outputPrice);
     const previousBlendedPrice = previousPrices.get(model.id) ?? null;
-    const match = matchArtificialAnalysisModel(model, artificialAnalysis.models);
     const isCheap = blendedPrice <= cheapThreshold;
-    const artificialAnalysisRank = match ? (rankMap.get(match.model.id) ?? null) : null;
+    const benchmarks = model.benchmarks?.artificial_analysis;
 
     return {
       id: model.id,
@@ -114,16 +98,10 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       blendedPrice,
       previousBlendedPrice,
       priceChangePercent: calculatePriceChange(blendedPrice, previousBlendedPrice),
-      intelligence:
-        match?.model.evaluations.artificial_analysis_intelligence_index ?? null,
-      coding: match?.model.evaluations.artificial_analysis_coding_index ?? null,
-      math: match?.model.evaluations.artificial_analysis_math_index ?? null,
-      speed: match?.model.median_output_tokens_per_second ?? null,
-      latency: match?.model.median_time_to_first_token_seconds ?? null,
-      artificialAnalysisRank,
-      artificialAnalysisName: match?.model.name ?? null,
-      artificialAnalysisSlug: match?.model.slug ?? null,
-      matchConfidence: match ? Math.round(match.confidence * 100) : null,
+      intelligence: finiteScore(benchmarks?.intelligence_index),
+      coding: finiteScore(benchmarks?.coding_index),
+      agentic: finiteScore(benchmarks?.agentic_index),
+      intelligenceRank: null,
       segment: isCheap ? "cheap" : "standard",
       isCheap,
       isStateOfTheArt: false,
@@ -131,27 +109,26 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
     };
   });
 
-  const matchedByRank = models
-    .filter((model) => model.artificialAnalysisRank !== null)
-    .sort(
-      (left, right) =>
-        (left.artificialAnalysisRank ?? Infinity) -
-        (right.artificialAnalysisRank ?? Infinity),
-    );
+  const rankedModels = models
+    .filter((model): model is RadarModel & { intelligence: number } => model.intelligence !== null)
+    .sort((left, right) => right.intelligence - left.intelligence);
 
-  for (const model of matchedByRank.slice(0, STATE_OF_THE_ART_COUNT)) {
-    model.isStateOfTheArt = true;
-    model.segment = "state-of-the-art";
+  for (const [index, model] of rankedModels.entries()) {
+    model.intelligenceRank = index + 1;
+    if (index < STATE_OF_THE_ART_COUNT) {
+      model.isStateOfTheArt = true;
+      model.segment = "state-of-the-art";
+    }
   }
 
   addValueScores(models);
   models.sort((left, right) => {
-    if (left.artificialAnalysisRank === null) return 1;
-    if (right.artificialAnalysisRank === null) return -1;
-    return left.artificialAnalysisRank - right.artificialAnalysisRank;
+    if (left.intelligenceRank === null) return 1;
+    if (right.intelligenceRank === null) return -1;
+    return left.intelligenceRank - right.intelligenceRank;
   });
 
-  const rankedCount = models.filter((model) => model.artificialAnalysisRank !== null).length;
+  const rankedCount = rankedModels.length;
   if (databaseStatus.state === "live") {
     try {
       await saveDailySnapshot(
@@ -201,7 +178,18 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
         label: "Pricing live",
         detail: "Current paid model prices from OpenRouter.",
       },
-      artificialAnalysis: artificialAnalysis.status,
+      benchmarks:
+        rankedCount > 0
+          ? {
+              state: "live",
+              label: "Benchmarks live",
+              detail: "Artificial Analysis indices supplied by OpenRouter.",
+            }
+          : {
+              state: "unavailable",
+              label: "Benchmarks unavailable",
+              detail: "OpenRouter returned no Intelligence Index data.",
+            },
       database: databaseStatus,
     },
   };
@@ -243,9 +231,9 @@ export function unavailableRadarData(): RadarData {
         label: "Pricing unavailable",
         detail: "OpenRouter could not be reached.",
       },
-      artificialAnalysis: {
+      benchmarks: {
         state: "unavailable",
-        label: "Rankings unavailable",
+        label: "Benchmarks unavailable",
         detail: "Waiting for pricing data.",
       },
       database: {

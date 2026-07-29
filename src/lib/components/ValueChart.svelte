@@ -37,7 +37,7 @@
   <div class="chart-empty">
     <div class="chart-empty-icon"><Activity size={24} /></div>
     <strong>The value map is waiting for rankings</strong>
-    <p>Pricing is live. Add an Artificial Analysis API key to plot intelligence.</p>
+    <p>Pricing is live, but OpenRouter supplied no Intelligence Index data.</p>
   </div>
 {:else}
   <div class="chart-wrap">

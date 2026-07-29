@@ -69,22 +69,16 @@
   </section>
 
   <section class="detail-section">
-    <div class="section-heading compact"><div><span class="section-kicker">CAPABILITY</span><h3>Artificial Analysis</h3></div></div>
+    <div class="section-heading compact"><div><span class="section-kicker">CAPABILITY</span><h3>Artificial Analysis via OpenRouter</h3></div></div>
     <dl class="detail-list">
-      <div><dt>Intelligence index</dt><dd>{model.intelligence ?? "Not matched"}</dd></div>
+      <div><dt>Intelligence index</dt><dd>{model.intelligence ?? "Not available"}</dd></div>
       <div><dt>Coding index</dt><dd>{model.coding ?? "-"}</dd></div>
-      <div><dt>Math index</dt><dd>{model.math ?? "-"}</dd></div>
-      <div><dt>Median output speed</dt><dd>{model.speed ? `${Math.round(model.speed)} t/s` : "-"}</dd></div>
+      <div><dt>Agentic index</dt><dd>{model.agentic ?? "-"}</dd></div>
+      <div><dt>Paid-model rank</dt><dd>{model.intelligenceRank ? `#${model.intelligenceRank}` : "-"}</dd></div>
     </dl>
-    {#if model.artificialAnalysisName}
-      <p class="match-note">Matched to "{model.artificialAnalysisName}" with {model.matchConfidence}% confidence.</p>
-    {/if}
   </section>
 
   <div class="detail-links">
     <a href={`https://openrouter.ai/${model.id}`} target="_blank" rel="noreferrer">Open in OpenRouter <ExternalLink size={14} /></a>
-    {#if model.artificialAnalysisSlug}
-      <a href={`https://artificialanalysis.ai/models/${model.artificialAnalysisSlug}`} target="_blank" rel="noreferrer">View benchmark <ExternalLink size={14} /></a>
-    {/if}
   </div>
 </dialog>

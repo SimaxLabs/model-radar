@@ -1,12 +1,12 @@
 # Model Radar
 
-Model Radar is a Svelte 5 and SvelteKit application for tracking paid AI model prices from OpenRouter and comparing them with independent Artificial Analysis benchmarks. Daily prices are persisted through Drizzle and libSQL, using a local file during development or Turso in production.
+Model Radar is a Svelte 5 and SvelteKit application for tracking paid AI model prices from OpenRouter and comparing them with independent Artificial Analysis benchmarks supplied through OpenRouter. Daily prices are persisted through Drizzle and libSQL, using a local file during development or Turso in production.
 
 ## Features
 
 - Live paid-model pricing from OpenRouter
 - Free, zero-priced, and dynamic-price routes excluded
-- Artificial Analysis Intelligence, Coding, Math, speed, and latency metrics
+- Artificial Analysis Intelligence, Coding, and Agentic indices from OpenRouter
 - Cheap and frontier model segments
 - Workload-based monthly cost estimates
 - Daily idempotent price snapshots and increase/drop detection
@@ -34,7 +34,7 @@ npm run dev
 
 The app is available at `http://localhost:5173`. A local database is created at `.data/model-radar.db` on first load.
 
-Create a free Artificial Analysis API key at [artificialanalysis.ai/documentation](https://artificialanalysis.ai/documentation) and set `ARTIFICIAL_ANALYSIS_API_KEY`. OpenRouter pricing works without a key, while ranking-dependent recommendations remain explicitly unavailable until it is configured.
+OpenRouter's public model catalog supplies both pricing and available benchmark indices, so no upstream API key is required.
 
 ## Turso
 
@@ -57,16 +57,16 @@ curl -X POST \
   https://your-app.example/api/sync
 ```
 
-Only this authenticated endpoint bypasses the source caches. The public refresh route cannot exhaust the Artificial Analysis quota.
+Only this authenticated endpoint bypasses the OpenRouter source cache. Public refreshes continue to use cached upstream data.
 
 ## Classification
 
 - **Blended price:** 75% input price and 25% output price, per one million total tokens.
 - **Cheap:** blended price at or below `CHEAP_MODEL_MAX_PRICE`, defaulting to `$1`.
-- **Frontier:** the top 10 matched OpenRouter models by Artificial Analysis Intelligence Index.
-- **Value score:** 68% normalized intelligence, 22% log-price efficiency, and 10% output speed.
+- **Frontier:** the top 10 paid OpenRouter models with the highest Artificial Analysis Intelligence Index.
+- **Value score:** 75% normalized intelligence and 25% log-price efficiency.
 
-Model matching is constrained by creator and scored from normalized model names. The matched Artificial Analysis configuration and confidence are visible in each model's detail panel.
+OpenRouter attaches benchmark scores directly to its model IDs, so no fuzzy model matching is required. Models without an Intelligence Index remain available for pricing but are excluded from frontier and value rankings.
 
 ## Production
 
@@ -81,7 +81,7 @@ ORIGIN=https://your-app.example npm start
 
 The production image pins the currently published Node 24 LTS slim image by digest for reproducible builds, builds the SvelteKit application in a separate stage, and runs as an unprivileged user. Compose drops Linux capabilities, prevents privilege escalation, makes the root filesystem read-only, limits resources, and persists local libSQL data in a named volume.
 
-Create a `.env` file based on `.env.docker.example`, then configure at least `ORIGIN`, `ARTIFICIAL_ANALYSIS_API_KEY`, and `CRON_SECRET`.
+Create a `.env` file based on `.env.docker.example`, then configure at least `ORIGIN` and `CRON_SECRET`.
 
 Build and start the service:
 
@@ -125,8 +125,8 @@ DATABASE_AUTH_TOKEN=your-token
 
 The local volume may remain attached when using Turso; the application will not write database data to it.
 
-The container health check uses `GET /api/health` and does not consume OpenRouter or Artificial Analysis quota.
+The container health check uses `GET /api/health` and does not call OpenRouter or the database.
 
 ## Data attribution
 
-Pricing data is provided by [OpenRouter](https://openrouter.ai/). Benchmark data is provided by [Artificial Analysis](https://artificialanalysis.ai/) through its free API and is attributed in the application as required by its terms.
+Pricing data is provided by [OpenRouter](https://openrouter.ai/). Benchmark scores are provided by [Artificial Analysis](https://artificialanalysis.ai/) and supplied through OpenRouter's public model API; both sources remain attributed in the application.

@@ -1,4 +1,4 @@
-export type SourceState = "live" | "needs-key" | "unavailable";
+export type SourceState = "live" | "unavailable";
 
 export interface SourceStatus {
   state: SourceState;
@@ -17,24 +17,13 @@ export interface OpenRouterModel {
     prompt: string;
     completion: string;
   };
-}
-
-export interface ArtificialAnalysisModel {
-  id: string;
-  name: string;
-  slug: string;
-  model_creator: {
-    id: string;
-    name: string;
-    slug: string;
+  benchmarks?: {
+    artificial_analysis?: {
+      intelligence_index: number | null;
+      coding_index: number | null;
+      agentic_index: number | null;
+    };
   };
-  evaluations: {
-    artificial_analysis_intelligence_index: number | null;
-    artificial_analysis_coding_index: number | null;
-    artificial_analysis_math_index: number | null;
-  };
-  median_output_tokens_per_second: number | null;
-  median_time_to_first_token_seconds: number | null;
 }
 
 export type ModelSegment = "state-of-the-art" | "cheap" | "standard";
@@ -53,13 +42,8 @@ export interface RadarModel {
   priceChangePercent: number | null;
   intelligence: number | null;
   coding: number | null;
-  math: number | null;
-  speed: number | null;
-  latency: number | null;
-  artificialAnalysisRank: number | null;
-  artificialAnalysisName: string | null;
-  artificialAnalysisSlug: string | null;
-  matchConfidence: number | null;
+  agentic: number | null;
+  intelligenceRank: number | null;
   segment: ModelSegment;
   isCheap: boolean;
   isStateOfTheArt: boolean;
@@ -83,7 +67,7 @@ export interface RadarData {
   summary: RadarSummary;
   sources: {
     openRouter: SourceStatus;
-    artificialAnalysis: SourceStatus;
+    benchmarks: SourceStatus;
     database: SourceStatus;
   };
 }
