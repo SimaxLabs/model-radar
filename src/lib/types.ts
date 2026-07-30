@@ -6,6 +6,12 @@ export interface SourceStatus {
   detail: string;
 }
 
+export interface ArtificialAnalysisArticle {
+  title: string;
+  url: string;
+  publishedDate: string;
+}
+
 export interface OpenRouterModel {
   id: string;
   canonical_slug: string;

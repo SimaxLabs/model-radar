@@ -35,6 +35,12 @@
   const RECOMMENDATION_COUNT = 5;
   const COMPARISON_LIMIT = 4;
   const PAGE_SIZE = 25;
+  const articleDate = new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 
   let { data }: { data: PageData } = $props();
   let refreshedRadar = $state<RadarData | null>(null);
@@ -259,6 +265,36 @@
         </div>
       </section>
 
+      <section class="dashboard-section news-section" aria-labelledby="news-heading">
+        <header class="section-heading news-heading">
+          <div>
+            <span class="section-kicker">Artificial Analysis</span>
+            <h2 id="news-heading">Latest AI model news</h2>
+            <p>Independent model launches, benchmarks, and analysis.</p>
+          </div>
+          <a href="https://artificialanalysis.ai/articles" target="_blank" rel="noreferrer">View all articles <ExternalLink size={14} /></a>
+        </header>
+        {#if data.articles.length > 0}
+          <div class="news-list">
+            {#each data.articles as article (article.url)}
+              <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+              <a class="news-item" href={article.url} target="_blank" rel="noreferrer">
+                <div>
+                  <time datetime={article.publishedDate}>{articleDate.format(new Date(`${article.publishedDate}T00:00:00Z`))}</time>
+                  <h3>{article.title}</h3>
+                </div>
+                <ExternalLink size={16} aria-hidden="true" />
+              </a>
+            {/each}
+          </div>
+        {:else}
+          <div class="news-empty">
+            <p>Latest headlines are temporarily unavailable.</p>
+            <a href="https://artificialanalysis.ai/articles" target="_blank" rel="noreferrer">Browse Artificial Analysis <ExternalLink size={14} /></a>
+          </div>
+        {/if}
+      </section>
+
       <section class="dashboard-section model-section" id="models">
         <div class="section-heading model-heading">
           <div><span class="section-kicker">Model index</span><h2>Pricing and capability</h2><p>{matchingModels.length} models in the current view</p></div>
@@ -328,7 +364,7 @@
 
       <footer>
         <div class="footer-brand"><Sparkles size={17} /> Model Radar</div>
-        <p>Pricing by <a href="https://openrouter.ai" target="_blank" rel="noreferrer">OpenRouter</a>. Benchmark data by <a href="https://artificialanalysis.ai" target="_blank" rel="noreferrer">Artificial Analysis</a>, supplied via OpenRouter.</p>
+        <p>Pricing by <a href="https://openrouter.ai" target="_blank" rel="noreferrer">OpenRouter</a>. Benchmarks and news by <a href="https://artificialanalysis.ai" target="_blank" rel="noreferrer">Artificial Analysis</a>; benchmark indices supplied via OpenRouter.</p>
         <span>Snapshot {radar.snapshotDate}</span>
       </footer>
     </div>
