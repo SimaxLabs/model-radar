@@ -1,7 +1,8 @@
 <script lang="ts">
   import { ExternalLink } from "@lucide/svelte";
-  import { compactNumber, formatPrice, money, providerName } from "$lib/format";
+  import { formatPrice, money } from "$lib/format";
   import type { ModelSegment, RadarModel } from "$lib/types";
+  import ProviderLogo from "$lib/components/ProviderLogo.svelte";
   import PriceChange from "$lib/components/PriceChange.svelte";
 
   let {
@@ -44,12 +45,11 @@
     <span>Close</span><span aria-hidden="true">x</span>
   </button>
   <div class="detail-title">
-    <span class="provider-monogram large">{providerName(model.provider).slice(0, 1)}</span>
-    <div><p>{providerName(model.provider)}</p><h2>{model.name}</h2></div>
+    <ProviderLogo provider={model.provider} size="large" />
+    <div><h2>{model.name}</h2></div>
   </div>
   <div class="detail-badges">
     <span class={`segment-tag segment-${model.segment}`}>{segmentLabel(model.segment)}</span>
-    <span>{compactNumber.format(model.contextLength)} context</span>
   </div>
 
   <section class="detail-callout">
@@ -63,7 +63,7 @@
     <dl class="detail-list">
       <div><dt>Input / 1M</dt><dd>{formatPrice(model.inputPrice)}</dd></div>
       <div><dt>Output / 1M</dt><dd>{formatPrice(model.outputPrice)}</dd></div>
-      <div><dt>3:1 blended / 1M</dt><dd>{formatPrice(model.blendedPrice)}</dd></div>
+      <div><dt class="has-tooltip" title="Estimated cost for 1M total tokens using 75% input and 25% output (a 3:1 mix).">3:1 blended / 1M</dt><dd>{formatPrice(model.blendedPrice)}</dd></div>
       <div><dt>Since prior snapshot</dt><dd><PriceChange value={model.priceChangePercent} /></dd></div>
     </dl>
   </section>

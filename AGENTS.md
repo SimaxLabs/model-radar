@@ -25,7 +25,7 @@
 
 ## Caching And Sync
 
-- Cache TTLs are deliberate: dashboard 5 minutes and OpenRouter 1 hour. In-flight requests are deduplicated.
+- Cache TTLs are deliberate: dashboard and OpenRouter are both 1 hour. In-flight requests are deduplicated.
 - Public `GET /api/radar` must use cached sources. Only authenticated `POST /api/sync` may call `getRadarData(true)` and bypass caches; `CRON_SECRET` must be at least 32 bytes.
 - Snapshots are UTC-dated and idempotent per model/day. Price changes compare against the most recent earlier date, not an earlier request on the same day.
 
@@ -48,4 +48,3 @@
 ## Frontend
 
 - Use Svelte 5 runes and existing components under `src/lib/components`; global visual styles are in `src/app.css`.
-- `ValueChart.svelte` intentionally uses native SVG to avoid shipping a chart runtime. Add a chart dependency only with a concrete capability or accessibility need.

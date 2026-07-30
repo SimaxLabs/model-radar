@@ -7,7 +7,7 @@ import type { RadarData, RadarModel } from "$lib/types";
 
 const MILLION = 1_000_000;
 const STATE_OF_THE_ART_COUNT = 10;
-const RADAR_CACHE_TTL = 5 * 60 * 1000;
+const RADAR_CACHE_TTL = 60 * 60 * 1000;
 
 let cache: { data: RadarData; expiresAt: number } | null = null;
 let pending: Promise<RadarData> | null = null;

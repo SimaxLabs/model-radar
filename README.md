@@ -7,14 +7,15 @@ Model Radar is a Svelte 5 and SvelteKit application for tracking paid AI model p
 - Live paid-model pricing from OpenRouter
 - Free, zero-priced, and dynamic-price routes excluded
 - Artificial Analysis Intelligence, Coding, and Agentic indices from OpenRouter
+- Local creator logos for major model providers with accessible fallbacks
 - Cheap and frontier model segments
 - Workload-based monthly cost estimates
 - Side-by-side comparison for up to four selected models
+- Paginated model index with full-catalog search, filters, and sorting
 - Daily idempotent price snapshots and increase/drop detection
 - Local libSQL development and Turso production persistence
 - Secret-protected daily sync endpoint
 - Server-rendered, responsive Svelte dashboard
-- Dependency-free SVG value map
 - CSP nonces, security headers, rate limits, request deduplication, and upstream timeouts
 
 ## Stack

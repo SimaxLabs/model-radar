@@ -4,27 +4,27 @@
     BadgeDollarSign,
     BrainCircuit,
     Check,
+    ChevronDown,
+    ChevronLeft,
     ChevronRight,
     CircleAlert,
     Database,
     ExternalLink,
     Gauge,
-    Info,
     Plus,
     RefreshCw,
     Scale,
     Search,
     Sparkles,
-    Target,
     X,
   } from "@lucide/svelte";
   import ModelComparison from "$lib/components/ModelComparison.svelte";
   import ModelDetail from "$lib/components/ModelDetail.svelte";
   import PriceChange from "$lib/components/PriceChange.svelte";
+  import ProviderLogo from "$lib/components/ProviderLogo.svelte";
   import RecommendationCard from "$lib/components/RecommendationCard.svelte";
   import SourcePill from "$lib/components/SourcePill.svelte";
-  import ValueChart from "$lib/components/ValueChart.svelte";
-  import { compactNumber, formatPrice, formatSyncTime, money, providerName } from "$lib/format";
+  import { formatPrice, money } from "$lib/format";
   import { rankBudgetModels } from "$lib/scoring";
   import type { RadarData, RadarModel } from "$lib/types";
   import type { PageData } from "./$types";
@@ -33,6 +33,7 @@
   type Sort = "rank" | "value" | "price";
   const RECOMMENDATION_COUNT = 5;
   const COMPARISON_LIMIT = 4;
+  const PAGE_SIZE = 25;
 
   let { data }: { data: PageData } = $props();
   let refreshedRadar = $state<RadarData | null>(null);
@@ -40,6 +41,8 @@
   let filter = $state<Filter>("all");
   let sort = $state<Sort>("rank");
   let search = $state("");
+  let pageNumber = $state(1);
+  let modelTable: HTMLDivElement;
   let inputMillions = $state(10);
   let outputMillions = $state(2);
   let selectedModel = $state<RadarModel | null>(null);
@@ -47,6 +50,7 @@
   let comparisonOpen = $state(false);
   let refreshing = $state(false);
   let refreshError = $state<string | null>(null);
+  let activeSection = $state<"radar" | "models">("radar");
 
   let safeInputMillions = $derived(Number.isFinite(inputMillions) ? Math.max(0, inputMillions) : 0);
   let safeOutputMillions = $derived(Number.isFinite(outputMillions) ? Math.max(0, outputMillions) : 0);
@@ -66,12 +70,7 @@
   let topBudget = $derived(
     rankBudgetModels(rankedModels).slice(0, RECOMMENDATION_COUNT),
   );
-  let topValue = $derived(
-    [...rankedModels].sort(
-      (left, right) => (right.valueScore ?? 0) - (left.valueScore ?? 0),
-    ).slice(0, RECOMMENDATION_COUNT),
-  );
-  let visibleModels = $derived.by(() => {
+  let matchingModels = $derived.by(() => {
     const query = search.trim().toLowerCase();
     return radar.models
       .filter((model) => {
@@ -92,6 +91,21 @@
         );
       });
   });
+  let totalPages = $derived(Math.max(1, Math.ceil(matchingModels.length / PAGE_SIZE)));
+  let currentPage = $derived(Math.min(pageNumber, totalPages));
+  let pageModels = $derived(
+    matchingModels.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+  );
+
+  function selectFilter(nextFilter: Filter) {
+    filter = nextFilter;
+    pageNumber = 1;
+  }
+
+  function goToPage(nextPage: number) {
+    pageNumber = Math.min(totalPages, Math.max(1, nextPage));
+    requestAnimationFrame(() => modelTable.scrollIntoView({ block: "start" }));
+  }
 
   function toggleComparison(modelId: string) {
     if (comparisonIds.includes(modelId)) {
@@ -122,6 +136,7 @@
       const payload = (await response.json()) as RadarData & { error?: string };
       if (!response.ok) throw new Error(payload.error || "Refresh failed");
       refreshedRadar = payload;
+      pageNumber = 1;
       const availableComparisonIds = comparisonIds.filter((modelId) =>
         payload.models.some((model) => model.id === modelId),
       );
@@ -141,39 +156,25 @@
 </svelte:head>
 
 <div class="app-shell">
-  <aside class="sidebar">
-    <a class="brand" href="#top" aria-label="Model Radar home">
-      <span class="brand-mark"><Activity size={19} /></span><span>MODEL<br />RADAR</span>
-    </a>
-    <nav class="side-nav" aria-label="Primary navigation">
-      <a href="#radar" class="active"><Target size={18} /> Radar</a>
-      <a href="#models"><Database size={18} /> Model index</a>
-      <a href="#method"><Info size={18} /> Method</a>
-    </nav>
-    <div class="sidebar-note">
-      <span class="eyebrow">DAILY SIGNAL</span>
-      <strong>
-        {#if radar.summary.priceIncreases > 0}
-          {radar.summary.priceIncreases} price increase{radar.summary.priceIncreases === 1 ? "" : "s"}
-        {:else}Prices holding steady{/if}
-      </strong>
-      <p>Compared with your previous daily snapshot.</p>
-    </div>
-    <div class="sidebar-footer"><span>MR / 01</span><span>{radar.snapshotDate}</span></div>
-  </aside>
-
   <main class="main-content" id="top">
     <header class="topbar">
-      <a class="mobile-brand" href="#top">
-        <span class="brand-mark"><Activity size={17} /></span>MODEL RADAR
-      </a>
-      <div class="topbar-context">
-        <span>AI MODEL INTELLIGENCE</span><span class="topbar-rule"></span><span>{formatSyncTime(radar.generatedAt)}</span>
+      <div class="topbar-left">
+        <a class="topbar-brand" href="#top" onclick={() => activeSection = "radar"}><Activity size={17} /><span>Model Radar</span></a>
       </div>
-      <div class="source-statuses">
-        <SourcePill source={radar.sources.openRouter} />
-        <SourcePill source={radar.sources.benchmarks} />
-        <SourcePill source={radar.sources.database} />
+      <nav class="topbar-nav" aria-label="Dashboard navigation">
+        <a class:active={activeSection === "radar"} href="#radar" onclick={() => activeSection = "radar"}><Gauge size={16} /><span>Overview</span></a>
+        <a class:active={activeSection === "models"} href="#models" onclick={() => activeSection = "models"}><Database size={16} /><span>Models</span></a>
+      </nav>
+      <div class="topbar-actions">
+        <details class="source-menu">
+          <summary aria-label="Show live monitor status"><span class="live-indicator"><i></i>Live monitor</span><ChevronDown size={14} /></summary>
+          <div class="source-statuses">
+            <div class="source-menu-header"><strong>Data sources</strong></div>
+            <SourcePill source={radar.sources.openRouter} />
+            <SourcePill source={radar.sources.benchmarks} />
+            <SourcePill source={radar.sources.database} />
+          </div>
+        </details>
         <button class="refresh-button" onclick={refresh} disabled={refreshing}>
           <RefreshCw size={15} class={refreshing ? "spinning" : undefined} /><span>{refreshing ? "Refreshing" : "Refresh"}</span>
         </button>
@@ -198,76 +199,95 @@
         <div class="error-banner"><CircleAlert size={17} /> {refreshError}</div>
       {/if}
 
-      <section class="hero" id="radar">
-        <div class="hero-copy">
-          <span class="eyebrow">MODEL SELECTION, WITHOUT THE GUESSWORK</span>
-          <h1>Spend less.<br /><em>Keep the intelligence.</em></h1>
-          <p>Live OpenRouter prices cross-checked against independent capability data. See when a model gets expensive, and what deserves to replace it.</p>
+      <section class="dashboard-heading" id="radar">
+        <div class="dashboard-title">
+          <div class="dashboard-label"><span></span>AI model intelligence</div>
+          <h1>Market overview</h1>
+          <p>Monitor model capability, pricing, and value signals across paid OpenRouter routes.</p>
         </div>
-        <div class="token-calculator">
-          <div class="calculator-heading">
-            <div><span class="eyebrow">YOUR MONTHLY LOAD</span><strong>Cost simulator</strong></div><Gauge size={23} />
+      </section>
+
+      <section class="token-calculator" aria-label="Monthly workload controls">
+        <div class="calculator-heading">
+          <span class="panel-icon"><Gauge size={17} /></span>
+          <div>
+            <strong>Monthly workload</strong>
+            <p>Cost estimates across this dashboard use these token volumes.</p>
           </div>
+        </div>
+        <div class="calculator-fields">
           <label><span>Input tokens</span><div><input type="number" min="0" step="1" bind:value={inputMillions} /><b>million</b></div></label>
           <label><span>Output tokens</span><div><input type="number" min="0" step="1" bind:value={outputMillions} /><b>million</b></div></label>
-          <p>Every recommendation and table estimate uses this workload.</p>
         </div>
       </section>
 
       <section class="metrics-grid" aria-label="Radar summary">
-        <article class="metric-card"><div class="metric-card-top"><span>PAID MODELS</span><Database size={18} /></div><strong>{radar.summary.paidModels}</strong><p>Free and dynamic-price routes excluded</p></article>
-        <article class="metric-card"><div class="metric-card-top"><span>BENCHMARKED</span><BrainCircuit size={18} /></div><strong>{radar.summary.rankedModels}</strong><p>Artificial Analysis via OpenRouter</p></article>
-        <article class="metric-card"><div class="metric-card-top"><span>CHEAP PICKS</span><BadgeDollarSign size={18} /></div><strong>{radar.summary.cheapModels}</strong><p>At or below {money.format(radar.summary.cheapThreshold)} blended</p></article>
-        <article class="metric-card"><div class="metric-card-top"><span>PRICE MOVES</span><Activity size={18} /></div><strong>{radar.summary.priceIncreases + radar.summary.priceDrops}</strong><p>{radar.summary.priceDrops} down / {radar.summary.priceIncreases} up</p></article>
+        <article class="metric-card metric-models">
+          <div class="metric-card-top"><span>Paid models</span><Database size={16} /></div>
+          <div class="metric-value"><strong>{radar.summary.paidModels}</strong><span>routes</span></div>
+          <p>Free and dynamic-price routes excluded</p>
+        </article>
+        <article class="metric-card metric-ranked">
+          <div class="metric-card-top"><span>Benchmarked</span><BrainCircuit size={16} /></div>
+          <div class="metric-value"><strong>{radar.summary.rankedModels}</strong><span>ranked</span></div>
+          <p>Artificial Analysis Intelligence Index</p>
+        </article>
+        <article class="metric-card metric-budget">
+          <div class="metric-card-top"><span>Budget pool</span><BadgeDollarSign size={16} /></div>
+          <div class="metric-value"><strong>{radar.summary.cheapModels}</strong><span>models</span></div>
+          <p>At or below {money.format(radar.summary.cheapThreshold)} blended / 1M</p>
+        </article>
+        <article class="metric-card metric-moves">
+          <div class="metric-card-top"><span>Price movement</span><Activity size={16} /></div>
+          <div class="metric-value"><strong>{radar.summary.priceIncreases + radar.summary.priceDrops}</strong><span>changes</span></div>
+          <p><span class="move-down">{radar.summary.priceDrops} down</span><span class="move-up">{radar.summary.priceIncreases} up</span></p>
+        </article>
       </section>
 
-      <section class="section-block recommendations-section">
-        <div class="section-heading"><div><span class="section-kicker">TODAY'S SHORTLIST</span><h2>Three ways to choose</h2></div><p>Five ranked picks for capability, affordability, and the strongest balance of both.</p></div>
+      <section class="dashboard-section recommendations-section" aria-label="Top model recommendations">
+        <header class="panel-group-header">
+          <div>
+            <span class="section-kicker">Decision panels</span>
+            <h2>Recommended models</h2>
+          </div>
+          <p>Rankings update against a workload of <strong>{safeInputMillions}M input</strong> and <strong>{safeOutputMillions}M output</strong> tokens.</p>
+        </header>
         <div class="recommendation-grid">
-          <RecommendationCard eyebrow="BEST CAPABILITY" models={topQuality} tone="ink" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
-          <RecommendationCard eyebrow="BEST UNDER BUDGET" models={topBudget} tone="lime" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
-          <RecommendationCard eyebrow="BEST BALANCE" models={topValue} tone="paper" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
+          <RecommendationCard eyebrow="BEST CAPABILITY" method="Paid OpenRouter models with an Artificial Analysis Intelligence Index are sorted from highest to lowest. The five highest-ranked models are shown." models={topQuality} tone="ink" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
+          <RecommendationCard eyebrow="BEST UNDER BUDGET" method={`Paid models at or below ${money.format(radar.summary.cheapThreshold)} blended per 1M tokens are scored within the cheap set: 50% normalized Intelligence Index and 50% log-price affordability. The five highest scores are shown.`} models={topBudget} tone="lime" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
         </div>
       </section>
 
-      <section class="section-block value-section">
-        <div class="section-heading chart-heading">
-          <div><span class="section-kicker">THE VALUE MAP</span><h2>Price vs. intelligence</h2></div>
-          <div class="chart-legend"><span><i class="dot-frontier"></i>Frontier</span><span><i class="dot-cheap"></i>Cheap</span><span><i class="dot-standard"></i>Standard</span></div>
-        </div>
-        <ValueChart models={radar.models} />
-        <div class="axis-labels"><span>LOWER BLENDED COST</span><span>HIGHER BLENDED COST -&gt;</span></div>
-      </section>
-
-      <section class="section-block model-section" id="models">
+      <section class="dashboard-section model-section" id="models">
         <div class="section-heading model-heading">
-          <div><span class="section-kicker">MODEL INDEX</span><h2>Inspect every signal</h2></div>
+          <div><span class="section-kicker">Model index</span><h2>Pricing and capability</h2><p>{matchingModels.length} models in the current view</p></div>
           <div class="model-tools">
-            <label class="search-box"><Search size={16} /><input bind:value={search} placeholder="Search models" aria-label="Search models" /></label>
-            <select bind:value={sort} aria-label="Sort models"><option value="rank">Sort: intelligence</option><option value="value">Sort: value</option><option value="price">Sort: price</option></select>
+            <label class="search-box"><Search size={16} /><input bind:value={search} oninput={() => pageNumber = 1} placeholder="Search all models" aria-label="Search all models" /></label>
+            <select bind:value={sort} onchange={() => pageNumber = 1} aria-label="Sort models"><option value="rank">Sort: intelligence</option><option value="value">Sort: value</option><option value="price">Sort: price</option></select>
           </div>
         </div>
-        <div class="filter-row">
-          <button class:active={filter === "all"} onclick={() => filter = "all"}>All paid <span>{radar.summary.paidModels}</span></button>
-          <button class:active={filter === "cheap"} onclick={() => filter = "cheap"}>Cheap <span>{radar.summary.cheapModels}</span></button>
-          <button class:active={filter === "state-of-the-art"} onclick={() => filter = "state-of-the-art"}>Frontier <span>{radar.summary.stateOfTheArtModels}</span></button>
-          <button class:active={filter === "changed"} onclick={() => filter = "changed"}>Price changed <span>{radar.summary.priceIncreases + radar.summary.priceDrops}</span></button>
+        <div class="filter-row" aria-label="Model filters">
+          <button class:active={filter === "all"} aria-pressed={filter === "all"} onclick={() => selectFilter("all")}>All paid <span>{radar.summary.paidModels}</span></button>
+          <button class:active={filter === "cheap"} aria-pressed={filter === "cheap"} onclick={() => selectFilter("cheap")}>Budget <span>{radar.summary.cheapModels}</span></button>
+          <button class:active={filter === "state-of-the-art"} aria-pressed={filter === "state-of-the-art"} onclick={() => selectFilter("state-of-the-art")}>Frontier <span>{radar.summary.stateOfTheArtModels}</span></button>
+          <button class:active={filter === "changed"} aria-pressed={filter === "changed"} onclick={() => selectFilter("changed")}>Price changed <span>{radar.summary.priceIncreases + radar.summary.priceDrops}</span></button>
         </div>
 
-        <div class="table-wrap">
+        <div class="table-wrap" bind:this={modelTable}>
           <table>
-            <thead><tr><th>Model</th><th>AA rank</th><th>Intelligence</th><th>Input / 1M</th><th>Output / 1M</th><th>Price move</th><th>Your monthly</th><th aria-label="Model actions"></th></tr></thead>
+            <thead><tr><th class="model-col">Model</th><th class="rank-col">AA rank</th><th class="intelligence-col">Intelligence</th><th class="blended-col">Blended / 1M</th><th class="input-col">Input / 1M</th><th class="output-col">Output / 1M</th><th class="change-col">Price move</th><th class="monthly-col">Monthly est.</th><th class="action-col" aria-label="Model actions"></th></tr></thead>
             <tbody>
-              {#each visibleModels as model (model.id)}
+              {#each pageModels as model (model.id)}
                 {@const monthlyCost = model.inputPrice * safeInputMillions + model.outputPrice * safeOutputMillions}
                 {@const inComparison = comparisonIds.includes(model.id)}
                 <tr>
-                  <td><button class="model-identity" onclick={() => selectedModel = model}><span class="provider-monogram small">{providerName(model.provider).slice(0, 1)}</span><span><strong>{model.name}</strong><small>{providerName(model.provider)} / {compactNumber.format(model.contextLength)} ctx</small></span></button></td>
-                  <td>{model.intelligenceRank ? `#${model.intelligenceRank}` : "-"}</td>
-                  <td><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></td>
-                  <td>{formatPrice(model.inputPrice)}</td><td>{formatPrice(model.outputPrice)}</td>
-                  <td><PriceChange value={model.priceChangePercent} /></td><td><strong>{money.format(monthlyCost)}</strong></td>
-                  <td>
+                  <td class="model-col"><button class="model-identity" onclick={() => selectedModel = model}><ProviderLogo provider={model.provider} size="small" /><span><strong>{model.name}</strong></span></button></td>
+                  <td class="rank-col">{model.intelligenceRank ? `#${model.intelligenceRank}` : "-"}</td>
+                  <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></td>
+                  <td class="blended-col"><strong>{formatPrice(model.blendedPrice)}</strong></td>
+                  <td class="input-col">{formatPrice(model.inputPrice)}</td><td class="output-col">{formatPrice(model.outputPrice)}</td>
+                  <td class="change-col"><PriceChange value={model.priceChangePercent} /></td><td class="monthly-col"><strong>{money.format(monthlyCost)}</strong></td>
+                  <td class="action-col">
                     <div class="row-actions">
                       <button
                         class="row-action comparison-toggle"
@@ -287,26 +307,28 @@
               {/each}
             </tbody>
           </table>
-          {#if visibleModels.length === 0}
+          {#if matchingModels.length === 0}
             <div class="no-results"><Search size={23} /><strong>No models in this view</strong><p>Try another filter or clear your search.</p></div>
           {/if}
         </div>
-      </section>
-
-      <section class="method-section" id="method">
-        <div><span class="section-kicker">HOW THE RADAR THINKS</span><h2>Independent quality.<br />Marketplace price.</h2></div>
-        <div class="method-grid">
-          <article><span>01</span><div><strong>Blended price</strong><p>Three input tokens to one output token, expressed per million total tokens.</p></div></article>
-          <article><span>02</span><div><strong>Cheap</strong><p>Any paid model at or below {money.format(radar.summary.cheapThreshold)} blended. Change it with an environment variable.</p></div></article>
-          <article><span>03</span><div><strong>Frontier</strong><p>The top ten paid OpenRouter models by Artificial Analysis Intelligence Index.</p></div></article>
-          <article><span>04</span><div><strong>Value score</strong><p>75% intelligence and 25% log-price efficiency, normalized across benchmarked models.</p></div></article>
-        </div>
+        {#if matchingModels.length > 0}
+          <nav class="model-pagination" aria-label="Model index pagination">
+            <p>{PAGE_SIZE} per page</p>
+            <div class="pagination-controls">
+              <button class="pagination-edge" onclick={() => goToPage(1)} disabled={currentPage === 1}>First</button>
+              <button onclick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page"><ChevronLeft size={15} /></button>
+              <span>Page <strong>{currentPage}</strong> of {totalPages}</span>
+              <button onclick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page"><ChevronRight size={15} /></button>
+              <button class="pagination-edge" onclick={() => goToPage(totalPages)} disabled={currentPage === totalPages}>Last</button>
+            </div>
+          </nav>
+        {/if}
       </section>
 
       <footer>
         <div class="footer-brand"><Sparkles size={17} /> Model Radar</div>
         <p>Pricing by <a href="https://openrouter.ai" target="_blank" rel="noreferrer">OpenRouter</a>. Benchmark data by <a href="https://artificialanalysis.ai" target="_blank" rel="noreferrer">Artificial Analysis</a>, supplied via OpenRouter.</p>
-        <span>Built for better model decisions.</span>
+        <span>Snapshot {radar.snapshotDate}</span>
       </footer>
     </div>
   </main>

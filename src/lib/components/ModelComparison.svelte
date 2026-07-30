@@ -1,10 +1,11 @@
 <script lang="ts">
   import { ExternalLink, X } from "@lucide/svelte";
-  import { compactNumber, formatChange, formatPrice, money, providerName } from "$lib/format";
+  import { formatChange, formatPrice, money } from "$lib/format";
   import type { RadarModel } from "$lib/types";
 
   type ComparisonMetric = {
     label: string;
+    description?: string;
     value: (model: RadarModel) => number | null;
     display: (model: RadarModel) => string;
     preference?: "high" | "low";
@@ -72,6 +73,7 @@
     },
     {
       label: "3:1 blended / 1M",
+      description: "Estimated cost for 1M total tokens using 75% input and 25% output (a 3:1 mix).",
       value: (model) => model.blendedPrice,
       display: (model) => formatPrice(model.blendedPrice),
       preference: "low",
@@ -88,18 +90,9 @@
       display: (model) => formatChange(model.priceChangePercent),
     },
   ];
-  const capacityMetrics: ComparisonMetric[] = [
-    {
-      label: "Context window",
-      value: (model) => model.contextLength,
-      display: (model) => `${compactNumber.format(model.contextLength)} tokens`,
-      preference: "high",
-    },
-  ];
   const metricGroups = [
     { label: "Capability", metrics: capabilityMetrics },
     { label: "Pricing", metrics: priceMetrics },
-    { label: "Capacity", metrics: capacityMetrics },
   ];
 
   $effect(() => {
@@ -148,10 +141,9 @@
           {#each models as model (model.id)}
             <th>
               <div class="comparison-model">
-                <div>
-                  <span>{providerName(model.provider)}</span>
-                  <strong title={model.name}>{model.name}</strong>
-                </div>
+                 <div>
+                   <strong title={model.name}>{model.name}</strong>
+                 </div>
                 <button onclick={() => onremove(model.id)} aria-label={`Remove ${model.name} from comparison`}><X size={13} /></button>
               </div>
               <a href={`https://openrouter.ai/${model.id}`} target="_blank" rel="noreferrer">OpenRouter <ExternalLink size={11} /></a>
@@ -164,7 +156,7 @@
           <tr class="comparison-group"><th colspan={models.length + 1}>{group.label}</th></tr>
           {#each group.metrics as metric (metric.label)}
             <tr>
-              <th>{metric.label}</th>
+              <th class:has-tooltip={metric.description !== undefined} title={metric.description}>{metric.label}</th>
               {#each models as model (model.id)}
                 {@const best = isBest(metric, model)}
                 <td class:comparison-best={best}>

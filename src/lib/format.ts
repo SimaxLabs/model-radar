@@ -22,16 +22,36 @@ export function formatPrice(value: number) {
 }
 
 export function providerName(provider: string) {
+  const normalizedProvider = provider.replace(/^~/, "");
   const labels: Record<string, string> = {
+    alibaba: "Alibaba",
+    amazon: "Amazon",
+    anthropic: "Anthropic",
+    baidu: "Baidu",
+    bytedance: "ByteDance",
+    "bytedance-seed": "ByteDance",
+    cohere: "Cohere",
+    deepseek: "DeepSeek",
+    google: "Google",
     "meta-llama": "Meta",
+    meta: "Meta",
+    microsoft: "Microsoft",
+    minimax: "MiniMax",
     mistralai: "Mistral",
     moonshotai: "Moonshot AI",
+    nvidia: "NVIDIA",
+    openai: "OpenAI",
+    openrouter: "OpenRouter",
+    perplexity: "Perplexity",
+    qwen: "Qwen",
+    tencent: "Tencent",
     "x-ai": "xAI",
+    xiaomi: "Xiaomi",
     "z-ai": "Z.AI",
   };
   return (
-    labels[provider] ??
-    provider
+    labels[normalizedProvider] ??
+    normalizedProvider
       .split("-")
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(" ")
