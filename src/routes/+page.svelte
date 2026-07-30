@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { base } from "$app/paths";
   import {
     Activity,
     BadgeDollarSign,
@@ -129,7 +130,7 @@
     refreshing = true;
     refreshError = null;
     try {
-      const response = await fetch("/api/radar", {
+      const response = await fetch(`${base}/api/radar`, {
         headers: { Accept: "application/json" },
         cache: "no-store",
       });

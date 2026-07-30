@@ -21,6 +21,7 @@ concurrency:
 env:
   REGISTRY: issogr.duckdns.org
   IMAGE_NAME: model-radar
+  BASE_PATH: /model-radar
 
 jobs:
   verify:
@@ -83,6 +84,8 @@ jobs:
           file: Dockerfile
           target: runtime
           platforms: linux/amd64
+          build-args: |
+            BASE_PATH=${{ env.BASE_PATH }}
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}

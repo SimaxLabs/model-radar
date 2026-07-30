@@ -6,6 +6,9 @@ const config = {
   preprocess: vitePreprocess(),
   kit: {
     adapter: adapter({ out: "build", precompress: true }),
+    paths: {
+      base: process.env.BASE_PATH || "",
+    },
     csp: {
       mode: "nonce",
       directives: {

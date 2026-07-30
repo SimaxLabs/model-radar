@@ -84,6 +84,12 @@ ORIGIN=https://your-app.example npm start
 
 The production image pins the currently published Node 24 LTS slim image by digest for reproducible builds, builds the SvelteKit application in a separate stage, and runs as an unprivileged user. Compose drops Linux capabilities, prevents privilege escalation, makes the root filesystem read-only, limits resources, and persists local libSQL data in a named volume.
 
+For a subpath deployment, set the image build argument explicitly. The base path is compiled into SvelteKit and cannot be changed only at runtime:
+
+```bash
+docker build --build-arg BASE_PATH=/model-radar -t model-radar .
+```
+
 Create a `.env` file based on `.env.docker.example`, then configure at least `ORIGIN` and `CRON_SECRET`.
 
 Build and start the service:
