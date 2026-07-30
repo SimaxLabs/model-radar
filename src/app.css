@@ -375,25 +375,12 @@ a {
   scroll-margin-top: 64px;
 }
 
-.dashboard-label,
 .section-kicker {
   color: var(--muted);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.dashboard-label {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.dashboard-label > span {
-  width: 14px;
-  height: 2px;
-  background: var(--orange);
 }
 
 .dashboard-heading h1 {
@@ -656,6 +643,10 @@ a {
 
 .section-title-copy {
   min-width: 0;
+}
+
+.section-title-copy > h2:only-child {
+  margin-top: 0;
 }
 
 .section-title-icon {
@@ -950,12 +941,6 @@ a {
   min-height: 76px;
   padding: 11px 14px;
   border-bottom: 1px solid var(--border);
-}
-
-.news-heading .section-title-copy p {
-  margin: 2px 0 0;
-  color: var(--faint);
-  font-size: 12px;
 }
 
 .news-heading > a,
