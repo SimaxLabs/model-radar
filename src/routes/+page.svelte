@@ -12,6 +12,7 @@
     Database,
     ExternalLink,
     Gauge,
+    Newspaper,
     Plus,
     RefreshCw,
     Scale,
@@ -253,9 +254,12 @@
 
       <section class="dashboard-section recommendations-section" aria-label="Top model recommendations">
         <header class="panel-group-header">
-          <div>
-            <span class="section-kicker">Decision panels</span>
-            <h2>Recommended models</h2>
+          <div class="section-title-group">
+            <span class="section-title-icon section-title-icon-orange"><Sparkles size={17} /></span>
+            <div class="section-title-copy">
+              <span class="section-kicker">Decision panels</span>
+              <h2>Recommended models</h2>
+            </div>
           </div>
           <p>Rankings update against a workload of <strong>{safeInputMillions}M input</strong> and <strong>{safeOutputMillions}M output</strong> tokens.</p>
         </header>
@@ -267,10 +271,13 @@
 
       <section class="dashboard-section news-section" aria-labelledby="news-heading">
         <header class="section-heading news-heading">
-          <div>
-            <span class="section-kicker">Artificial Analysis</span>
-            <h2 id="news-heading">Latest AI model news</h2>
-            <p>Independent model launches, benchmarks, and analysis.</p>
+          <div class="section-title-group">
+            <span class="section-title-icon section-title-icon-blue"><Newspaper size={17} /></span>
+            <div class="section-title-copy">
+              <span class="section-kicker">Artificial Analysis</span>
+              <h2 id="news-heading">Latest AI model news</h2>
+              <p>Independent model launches, benchmarks, and analysis.</p>
+            </div>
           </div>
           <a href="https://artificialanalysis.ai/articles" target="_blank" rel="noreferrer">View all articles <ExternalLink size={14} /></a>
         </header>
@@ -297,7 +304,10 @@
 
       <section class="dashboard-section model-section" id="models">
         <div class="section-heading model-heading">
-          <div><span class="section-kicker">Model index</span><h2>Pricing and capability</h2><p>{matchingModels.length} models in the current view</p></div>
+          <div class="section-title-group">
+            <span class="section-title-icon section-title-icon-green"><Database size={17} /></span>
+            <div class="section-title-copy"><span class="section-kicker">Model index</span><h2>Pricing and capability</h2><p>{matchingModels.length} models in the current view</p></div>
+          </div>
           <div class="model-tools">
             <label class="search-box"><Search size={16} /><input bind:value={search} oninput={() => pageNumber = 1} placeholder="Search all models" aria-label="Search all models" /></label>
             <select bind:value={sort} onchange={() => pageNumber = 1} aria-label="Sort models"><option value="rank">Sort: intelligence</option><option value="value">Sort: value</option><option value="price">Sort: price</option></select>
