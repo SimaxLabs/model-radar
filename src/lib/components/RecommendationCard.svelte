@@ -33,28 +33,38 @@
     </details>
   </div>
   {#if models.length > 0}
-    <ol class="recommendation-list">
-      {#each models as model (model.id)}
-        {@const estimatedCost = model.inputPrice * inputMillions + model.outputPrice * outputMillions}
-        <li class="recommendation-item">
-          <div class="recommendation-body">
-            <div class="recommendation-heading">
-              <ProviderLogo provider={model.provider} />
-              <div>
-                <h3 title={model.name}>{model.name}</h3>
-              </div>
-            </div>
-            <div class="recommendation-stats">
-              <div><span>AA index</span><strong>{model.intelligence ?? "-"}</strong></div>
-              <div><span>Input / 1M</span><strong>{formatPrice(model.inputPrice)}</strong></div>
-              <div><span>Output / 1M</span><strong>{formatPrice(model.outputPrice)}</strong></div>
-              <div><span class="has-tooltip" title="Estimated cost for 1M total tokens using 75% input and 25% output (a 3:1 mix).">Blended / 1M</span><strong>{formatPrice(model.blendedPrice)}</strong></div>
-              <div><span>Your monthly</span><strong>{money.format(estimatedCost)}</strong></div>
-            </div>
-          </div>
-        </li>
-      {/each}
-    </ol>
+    <div class="recommendation-table">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Model</th>
+            <th scope="col">AA index</th>
+            <th scope="col">Input / 1M</th>
+            <th scope="col">Output / 1M</th>
+            <th scope="col"><span class="has-tooltip" title="Estimated cost for 1M total tokens using 75% input and 25% output (a 3:1 mix).">Blended / 1M</span></th>
+            <th scope="col">Your monthly</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each models as model (model.id)}
+            {@const estimatedCost = model.inputPrice * inputMillions + model.outputPrice * outputMillions}
+            <tr>
+              <td>
+                <div class="recommendation-heading">
+                  <ProviderLogo provider={model.provider} />
+                  <h3 title={model.name}>{model.name}</h3>
+                </div>
+              </td>
+              <td>{model.intelligence ?? "-"}</td>
+              <td>{formatPrice(model.inputPrice)}</td>
+              <td>{formatPrice(model.outputPrice)}</td>
+              <td>{formatPrice(model.blendedPrice)}</td>
+              <td>{money.format(estimatedCost)}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
   {:else}
     <div class="recommendation-empty">
       <BrainCircuit size={25} />
