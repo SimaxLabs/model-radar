@@ -41,7 +41,6 @@
             <th scope="col">AA index</th>
             <th scope="col">Input / 1M</th>
             <th scope="col">Output / 1M</th>
-            <th scope="col"><span class="has-tooltip" title="Estimated cost for 1M total tokens using 75% input and 25% output (a 3:1 mix).">Blended / 1M</span></th>
             <th scope="col">Your monthly</th>
           </tr>
         </thead>
@@ -58,7 +57,6 @@
               <td>{model.intelligence ?? "-"}</td>
               <td>{formatPrice(model.inputPrice)}</td>
               <td>{formatPrice(model.outputPrice)}</td>
-              <td>{formatPrice(model.blendedPrice)}</td>
               <td>{money.format(estimatedCost)}</td>
             </tr>
           {/each}

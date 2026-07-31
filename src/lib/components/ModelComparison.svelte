@@ -72,13 +72,6 @@
       preference: "low",
     },
     {
-      label: "3:1 blended / 1M",
-      description: "Estimated cost for 1M total tokens using 75% input and 25% output (a 3:1 mix).",
-      value: (model) => model.blendedPrice,
-      display: (model) => formatPrice(model.blendedPrice),
-      preference: "low",
-    },
-    {
       label: "Your monthly",
       value: monthlyCost,
       display: (model) => money.format(monthlyCost(model)),

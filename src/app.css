@@ -512,6 +512,18 @@ a {
   background: var(--surface);
 }
 
+.metric-card-link {
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.metric-card-link:hover,
+.metric-card-link:focus-visible {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
 .metric-card::before {
   position: absolute;
   inset: 0 auto 0 0;
@@ -522,7 +534,7 @@ a {
 
 .metric-models::before { background: var(--orange); }
 .metric-ranked::before { background: var(--blue); }
-.metric-budget::before { background: var(--green); }
+.metric-news::before { background: var(--green); }
 .metric-moves::before { background: var(--yellow); }
 
 .metric-card-top {
@@ -551,7 +563,7 @@ a {
   color: #8ab8ff;
 }
 
-.metric-budget .metric-card-top svg {
+.metric-news .metric-card-top svg {
   background: rgba(115, 191, 105, 0.13);
   color: #8fd484;
 }
@@ -594,6 +606,7 @@ a {
 
 .move-down { color: var(--green); }
 .move-up { color: var(--red); }
+.movement-refresh { margin-left: auto; white-space: nowrap; }
 
 .dashboard-section {
   margin-top: 16px;
@@ -1204,14 +1217,12 @@ tbody tr:hover td {
 
 .rank-col { min-width: 64px; }
 .intelligence-col { min-width: 92px; }
-.blended-col,
 .input-col,
 .output-col { min-width: 88px; }
 .change-col { min-width: 92px; }
 .monthly-col { min-width: 96px; }
 .action-col { width: 80px; }
 
-.blended-col strong,
 .monthly-col strong {
   color: var(--text-strong);
   font-weight: 600;

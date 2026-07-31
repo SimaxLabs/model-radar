@@ -63,7 +63,6 @@
     <dl class="detail-list">
       <div><dt>Input / 1M</dt><dd>{formatPrice(model.inputPrice)}</dd></div>
       <div><dt>Output / 1M</dt><dd>{formatPrice(model.outputPrice)}</dd></div>
-      <div><dt class="has-tooltip" title="Estimated cost for 1M total tokens using 75% input and 25% output (a 3:1 mix).">3:1 blended / 1M</dt><dd>{formatPrice(model.blendedPrice)}</dd></div>
       <div><dt>Since prior snapshot</dt><dd><PriceChange value={model.priceChangePercent} /></dd></div>
     </dl>
   </section>

@@ -2,7 +2,6 @@
   import { base } from "$app/paths";
   import {
     Activity,
-    BadgeDollarSign,
     BrainCircuit,
     Check,
     ChevronDown,
@@ -58,7 +57,7 @@
   let comparisonOpen = $state(false);
   let refreshing = $state(false);
   let refreshError = $state<string | null>(null);
-  let activeSection = $state<"radar" | "models">("radar");
+  let activeSection = $state<"radar" | "news" | "models">("radar");
 
   let safeInputMillions = $derived(Number.isFinite(inputMillions) ? Math.max(0, inputMillions) : 0);
   let safeOutputMillions = $derived(Number.isFinite(outputMillions) ? Math.max(0, outputMillions) : 0);
@@ -68,6 +67,14 @@
       .filter((model): model is RadarModel => model !== undefined),
   );
   let rankedModels = $derived(radar.models.filter((model) => model.intelligence !== null));
+  let recentArticleCount = $derived.by(() => {
+    const cutoffDate = new Date(
+      Date.parse(`${radar.snapshotDate}T00:00:00Z`) - 24 * 60 * 60 * 1000,
+    ).toISOString().slice(0, 10);
+    return data.articles.filter(
+      (article) => article.publishedDate >= cutoffDate && article.publishedDate <= radar.snapshotDate,
+    ).length;
+  });
   let topQuality = $derived(
     [...rankedModels].sort(
       (left, right) =>
@@ -171,6 +178,7 @@
       </div>
       <nav class="topbar-nav" aria-label="Dashboard navigation">
         <a class:active={activeSection === "radar"} href="#radar" onclick={() => activeSection = "radar"}><Gauge size={16} /><span>Overview</span></a>
+        <a class:active={activeSection === "news"} href="#news" onclick={() => activeSection = "news"}><Newspaper size={16} /><span>News</span></a>
         <a class:active={activeSection === "models"} href="#models" onclick={() => activeSection = "models"}><Database size={16} /><span>Models</span></a>
       </nav>
       <div class="topbar-actions">
@@ -239,16 +247,16 @@
           <div class="metric-value"><strong>{radar.summary.rankedModels}</strong><span>ranked</span></div>
           <p>Artificial Analysis Intelligence Index</p>
         </article>
-        <article class="metric-card metric-budget">
-          <div class="metric-card-top"><span>Budget pool</span><BadgeDollarSign size={16} /></div>
-          <div class="metric-value"><strong>{radar.summary.cheapModels}</strong><span>models</span></div>
-          <p>At or below {money.format(radar.summary.cheapThreshold)} blended / 1M</p>
-        </article>
-        <article class="metric-card metric-moves">
+        <a class="metric-card metric-card-link metric-news" href="#news" onclick={() => activeSection = "news"}>
+          <div class="metric-card-top"><span>New articles</span><Newspaper size={16} /></div>
+          <div class="metric-value"><strong>{recentArticleCount}</strong><span>{recentArticleCount === 1 ? "article" : "articles"}</span></div>
+          <p>New in the past day</p>
+        </a>
+        <a class="metric-card metric-card-link metric-moves" href="#models" onclick={() => { activeSection = "models"; selectFilter("changed"); }}>
           <div class="metric-card-top"><span>Price movement</span><Activity size={16} /></div>
           <div class="metric-value"><strong>{radar.summary.priceIncreases + radar.summary.priceDrops}</strong><span>changes</span></div>
-          <p><span class="move-down">{radar.summary.priceDrops} down</span><span class="move-up">{radar.summary.priceIncreases} up</span></p>
-        </article>
+          <p><span class="move-down">{radar.summary.priceDrops} down</span><span class="move-up">{radar.summary.priceIncreases} up</span><span class="movement-refresh">1h refresh</span></p>
+        </a>
       </section>
 
       <section class="dashboard-section recommendations-section" aria-label="Top model recommendations">
@@ -267,7 +275,7 @@
         </div>
       </section>
 
-      <section class="dashboard-section news-section" aria-labelledby="news-heading">
+      <section class="dashboard-section news-section" id="news" aria-labelledby="news-heading">
         <header class="section-heading news-heading">
           <div class="section-title-group">
             <span class="section-title-icon section-title-icon-blue"><Newspaper size={17} /></span>
@@ -319,7 +327,7 @@
 
         <div class="table-wrap" bind:this={modelTable}>
           <table>
-            <thead><tr><th class="model-col">Model</th><th class="rank-col">AA rank</th><th class="intelligence-col">Intelligence</th><th class="blended-col">Blended / 1M</th><th class="input-col">Input / 1M</th><th class="output-col">Output / 1M</th><th class="change-col">Price move</th><th class="monthly-col">Monthly est.</th><th class="action-col" aria-label="Model actions"></th></tr></thead>
+            <thead><tr><th class="model-col">Model</th><th class="rank-col">AA rank</th><th class="intelligence-col">Intelligence</th><th class="input-col">Input / 1M</th><th class="output-col">Output / 1M</th><th class="change-col">Price move</th><th class="monthly-col">Monthly est.</th><th class="action-col" aria-label="Model actions"></th></tr></thead>
             <tbody>
               {#each pageModels as model (model.id)}
                 {@const monthlyCost = model.inputPrice * safeInputMillions + model.outputPrice * safeOutputMillions}
@@ -328,9 +336,8 @@
                   <td class="model-col"><button class="model-identity" onclick={() => selectedModel = model}><ProviderLogo provider={model.provider} size="small" /><span><strong>{model.name}</strong></span></button></td>
                   <td class="rank-col">{model.intelligenceRank ? `#${model.intelligenceRank}` : "-"}</td>
                   <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></td>
-                  <td class="blended-col"><strong>{formatPrice(model.blendedPrice)}</strong></td>
                   <td class="input-col">{formatPrice(model.inputPrice)}</td><td class="output-col">{formatPrice(model.outputPrice)}</td>
-                  <td class="change-col"><PriceChange value={model.priceChangePercent} /></td><td class="monthly-col"><strong>{money.format(monthlyCost)}</strong></td>
+                  <td class="change-col">{#if model.priceChangePercent !== null && Math.abs(model.priceChangePercent) >= 0.001}<PriceChange value={model.priceChangePercent} />{/if}</td><td class="monthly-col"><strong>{money.format(monthlyCost)}</strong></td>
                   <td class="action-col">
                     <div class="row-actions">
                       <button
