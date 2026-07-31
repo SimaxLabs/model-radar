@@ -51,7 +51,8 @@ function finiteScore(value: number | null | undefined) {
 
 async function buildRadarData(force: boolean): Promise<RadarData> {
   const capturedAt = new Date();
-  const snapshotDate = capturedAt.toISOString().slice(0, 10);
+  const generatedAt = capturedAt.toISOString();
+  const snapshotDate = generatedAt.slice(0, 10);
   const cheapThreshold = positiveNumber(env.CHEAP_MODEL_MAX_PRICE, 1);
   const openRouterModels = await fetchOpenRouterModels(force);
 
@@ -160,7 +161,7 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
   }
 
   return {
-    generatedAt: capturedAt.toISOString(),
+    generatedAt,
     snapshotDate,
     models,
     summary: {
@@ -211,10 +212,10 @@ export async function getRadarData(force = false) {
 }
 
 export function unavailableRadarData(): RadarData {
-  const now = new Date();
+  const generatedAt = new Date().toISOString();
   return {
-    generatedAt: now.toISOString(),
-    snapshotDate: now.toISOString().slice(0, 10),
+    generatedAt,
+    snapshotDate: generatedAt.slice(0, 10),
     models: [],
     summary: {
       paidModels: 0,

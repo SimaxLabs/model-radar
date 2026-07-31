@@ -5,7 +5,6 @@
 
   type ComparisonMetric = {
     label: string;
-    description?: string;
     value: (model: RadarModel) => number | null;
     display: (model: RadarModel) => string;
     preference?: "high" | "low";
@@ -149,7 +148,7 @@
           <tr class="comparison-group"><th colspan={models.length + 1}>{group.label}</th></tr>
           {#each group.metrics as metric (metric.label)}
             <tr>
-              <th class:has-tooltip={metric.description !== undefined} title={metric.description}>{metric.label}</th>
+              <th>{metric.label}</th>
               {#each models as model (model.id)}
                 {@const best = isBest(metric, model)}
                 <td class:comparison-best={best}>

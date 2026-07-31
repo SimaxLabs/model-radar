@@ -11,6 +11,32 @@ const preciseMoney = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 4,
 });
+const PROVIDER_LABELS: Readonly<Record<string, string>> = {
+  alibaba: "Alibaba",
+  amazon: "Amazon",
+  anthropic: "Anthropic",
+  baidu: "Baidu",
+  bytedance: "ByteDance",
+  "bytedance-seed": "ByteDance",
+  cohere: "Cohere",
+  deepseek: "DeepSeek",
+  google: "Google",
+  "meta-llama": "Meta",
+  meta: "Meta",
+  microsoft: "Microsoft",
+  minimax: "MiniMax",
+  mistralai: "Mistral",
+  moonshotai: "Moonshot AI",
+  nvidia: "NVIDIA",
+  openai: "OpenAI",
+  openrouter: "OpenRouter",
+  perplexity: "Perplexity",
+  qwen: "Qwen",
+  tencent: "Tencent",
+  "x-ai": "xAI",
+  xiaomi: "Xiaomi",
+  "z-ai": "Z.AI",
+};
 
 export const compactNumber = new Intl.NumberFormat("en-US", {
   notation: "compact",
@@ -23,34 +49,8 @@ export function formatPrice(value: number) {
 
 export function providerName(provider: string) {
   const normalizedProvider = provider.replace(/^~/, "");
-  const labels: Record<string, string> = {
-    alibaba: "Alibaba",
-    amazon: "Amazon",
-    anthropic: "Anthropic",
-    baidu: "Baidu",
-    bytedance: "ByteDance",
-    "bytedance-seed": "ByteDance",
-    cohere: "Cohere",
-    deepseek: "DeepSeek",
-    google: "Google",
-    "meta-llama": "Meta",
-    meta: "Meta",
-    microsoft: "Microsoft",
-    minimax: "MiniMax",
-    mistralai: "Mistral",
-    moonshotai: "Moonshot AI",
-    nvidia: "NVIDIA",
-    openai: "OpenAI",
-    openrouter: "OpenRouter",
-    perplexity: "Perplexity",
-    qwen: "Qwen",
-    tencent: "Tencent",
-    "x-ai": "xAI",
-    xiaomi: "Xiaomi",
-    "z-ai": "Z.AI",
-  };
   return (
-    labels[normalizedProvider] ??
+    PROVIDER_LABELS[normalizedProvider] ??
     normalizedProvider
       .split("-")
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))

@@ -4,11 +4,18 @@ const ARTICLES_URL = "https://artificialanalysis.ai/articles";
 const ARTICLE_COUNT = 6;
 const CACHE_TTL = 3 * 60 * 60 * 1000;
 const MAX_RESPONSE_SIZE = 1_000_000;
-const ARTICLE_PATH = /^\/articles\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ARTICLE_LINK = /<a\b[^>]*\bhref\s*=\s*(["'])(\/articles\/[a-z0-9]+(?:-[a-z0-9]+)*)\1[^>]*>([\s\S]*?)<\/a>/gi;
 const HEADING = /<h3\b[^>]*>([\s\S]*?)<\/h3>/i;
 const PARAGRAPH = /<p\b[^>]*>([\s\S]*?)<\/p>/gi;
 const PUBLICATION_DATE = /^(January|February|March|April|May|June|July|August|September|October|November|December) ([1-9]|[12]\d|3[01]), (\d{4})$/;
+const NAMED_ENTITIES: Readonly<Record<string, string>> = {
+  amp: "&",
+  apos: "'",
+  gt: ">",
+  lt: "<",
+  nbsp: " ",
+  quot: '"',
+};
 const MONTHS = [
   "January",
   "February",
@@ -28,26 +35,13 @@ let cache: { data: ArtificialAnalysisArticle[]; expiresAt: number } | null = nul
 let pending: Promise<ArtificialAnalysisArticle[]> | null = null;
 
 function decodeHtml(value: string) {
-  const namedEntities: Record<string, string> = {
-    amp: "&",
-    apos: "'",
-    gt: ">",
-    lt: "<",
-    nbsp: " ",
-    quot: '"',
-  };
-
   return value.replace(/&(#(?:x[\da-f]+|\d+)|amp|apos|gt|lt|nbsp|quot);/gi, (entity, code: string) => {
-    if (!code.startsWith("#")) return namedEntities[code.toLowerCase()] ?? entity;
-    const value = code[1]?.toLowerCase() === "x"
+    if (!code.startsWith("#")) return NAMED_ENTITIES[code.toLowerCase()] ?? entity;
+    const codePoint = code[1]?.toLowerCase() === "x"
       ? Number.parseInt(code.slice(2), 16)
       : Number.parseInt(code.slice(1), 10);
-    if (!Number.isInteger(value) || value < 0 || value > 0x10ffff) return entity;
-    try {
-      return String.fromCodePoint(value);
-    } catch {
-      return entity;
-    }
+    if (!Number.isInteger(codePoint) || codePoint < 0 || codePoint > 0x10ffff) return entity;
+    return String.fromCodePoint(codePoint);
   });
 }
 
@@ -56,10 +50,11 @@ function textContent(value: string) {
 }
 
 function hasControlCharacter(value: string) {
-  return [...value].some((character) => {
-    const code = character.charCodeAt(0);
-    return code < 32 || code === 127;
-  });
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    if (code < 32 || code === 127) return true;
+  }
+  return false;
 }
 
 function parseDate(value: string) {
@@ -85,7 +80,7 @@ export function parseArtificialAnalysisArticles(html: string) {
   for (const match of html.matchAll(ARTICLE_LINK)) {
     const path = match[2];
     const body = match[3];
-    if (!ARTICLE_PATH.test(path) || seen.has(path)) continue;
+    if (seen.has(path)) continue;
 
     const title = textContent(HEADING.exec(body)?.[1] ?? "");
     if (!title || title.length > 240 || hasControlCharacter(title)) continue;

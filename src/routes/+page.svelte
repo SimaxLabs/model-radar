@@ -33,6 +33,7 @@
   type Filter = "all" | "cheap" | "state-of-the-art" | "changed";
   type Sort = "rank" | "value" | "price";
   const RECOMMENDATION_COUNT = 5;
+  const COMPARISON_MIN = 2;
   const COMPARISON_LIMIT = 4;
   const PAGE_SIZE = 25;
   const articleDate = new Intl.DateTimeFormat("en", {
@@ -66,7 +67,6 @@
       .map((modelId) => radar.models.find((model) => model.id === modelId))
       .filter((model): model is RadarModel => model !== undefined),
   );
-  let rankedModels = $derived(radar.models.filter((model) => model.intelligence !== null));
   let recentArticleCount = $derived.by(() => {
     const cutoffDate = new Date(
       Date.parse(`${radar.snapshotDate}T00:00:00Z`) - 24 * 60 * 60 * 1000,
@@ -76,14 +76,14 @@
     ).length;
   });
   let topQuality = $derived(
-    [...rankedModels].sort(
+    radar.models.filter((model) => model.intelligence !== null).sort(
       (left, right) =>
         (left.intelligenceRank ?? Infinity) -
         (right.intelligenceRank ?? Infinity),
     ).slice(0, RECOMMENDATION_COUNT),
   );
   let topBudget = $derived(
-    rankBudgetModels(rankedModels).slice(0, RECOMMENDATION_COUNT),
+    rankBudgetModels(radar.models).slice(0, RECOMMENDATION_COUNT),
   );
   let matchingModels = $derived.by(() => {
     const query = search.trim().toLowerCase();
@@ -132,7 +132,7 @@
 
   function removeComparison(modelId: string) {
     comparisonIds = comparisonIds.filter((candidate) => candidate !== modelId);
-    if (comparisonIds.length < 2) comparisonOpen = false;
+    if (comparisonIds.length < COMPARISON_MIN) comparisonOpen = false;
   }
 
   function clearComparison() {
@@ -152,11 +152,10 @@
       if (!response.ok) throw new Error(payload.error || "Refresh failed");
       refreshedRadar = payload;
       pageNumber = 1;
-      const availableComparisonIds = comparisonIds.filter((modelId) =>
+      comparisonIds = comparisonIds.filter((modelId) =>
         payload.models.some((model) => model.id === modelId),
       );
-      comparisonIds = availableComparisonIds;
-      if (availableComparisonIds.length < 2) comparisonOpen = false;
+      if (comparisonIds.length < COMPARISON_MIN) comparisonOpen = false;
     } catch (error) {
       refreshError = error instanceof Error ? error.message : "Refresh failed";
     } finally {
@@ -398,12 +397,12 @@
       </div>
       <div class="comparison-tray-actions">
         <button class="comparison-clear" onclick={clearComparison}>Clear</button>
-        <button class="comparison-open" onclick={() => comparisonOpen = true} disabled={comparisonModels.length < 2}>Compare models</button>
+        <button class="comparison-open" onclick={() => comparisonOpen = true} disabled={comparisonModels.length < COMPARISON_MIN}>Compare models</button>
       </div>
     </aside>
   {/if}
 
-  {#if comparisonOpen && comparisonModels.length >= 2}
+  {#if comparisonOpen && comparisonModels.length >= COMPARISON_MIN}
     <ModelComparison models={comparisonModels} inputMillions={safeInputMillions} outputMillions={safeOutputMillions} onremove={removeComparison} onclose={() => comparisonOpen = false} />
   {/if}
 </div>

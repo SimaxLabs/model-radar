@@ -73,13 +73,6 @@ a {
   background: rgba(87, 148, 242, 0.35);
 }
 
-.has-tooltip {
-  cursor: help;
-  text-decoration: underline dotted;
-  text-decoration-color: #737880;
-  text-underline-offset: 3px;
-}
-
 .app-shell {
   min-height: 100vh;
 }
