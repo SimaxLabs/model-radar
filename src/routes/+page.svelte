@@ -2,7 +2,9 @@
   import { base } from "$app/paths";
   import {
     Activity,
-    BrainCircuit,
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
     Check,
     ChevronDown,
     ChevronLeft,
@@ -16,7 +18,7 @@
     RefreshCw,
     Scale,
     Search,
-    Sparkles,
+    Wallet,
     X,
   } from "@lucide/svelte";
   import ModelComparison from "$lib/components/ModelComparison.svelte";
@@ -30,8 +32,9 @@
   import type { RadarData, RadarModel } from "$lib/types";
   import type { PageData } from "./$types";
 
-  type Filter = "all" | "cheap" | "state-of-the-art" | "changed";
-  type Sort = "rank" | "value" | "price";
+  type Filter = "all" | "cheap" | "changed";
+  type Sort = "intelligence" | "input" | "output" | "monthly";
+  type SortDirection = "asc" | "desc";
   const RECOMMENDATION_COUNT = 5;
   const COMPARISON_MIN = 2;
   const COMPARISON_LIMIT = 4;
@@ -47,7 +50,8 @@
   let refreshedRadar = $state<RadarData | null>(null);
   let radar = $derived(refreshedRadar ?? data.radar);
   let filter = $state<Filter>("all");
-  let sort = $state<Sort>("rank");
+  let sort = $state<Sort>("intelligence");
+  let sortDirection = $state<SortDirection>("desc");
   let search = $state("");
   let pageNumber = $state(1);
   let modelTable: HTMLDivElement;
@@ -90,7 +94,6 @@
     return radar.models
       .filter((model) => {
         if (filter === "cheap" && !model.isCheap) return false;
-        if (filter === "state-of-the-art" && !model.isStateOfTheArt) return false;
         if (
           filter === "changed" &&
           (model.priceChangePercent === null || Math.abs(model.priceChangePercent) < 0.001)
@@ -98,12 +101,24 @@
         return !query || `${model.name} ${model.provider} ${model.id}`.toLowerCase().includes(query);
       })
       .sort((left, right) => {
-        if (sort === "price") return left.blendedPrice - right.blendedPrice;
-        if (sort === "value") return (right.valueScore ?? -1) - (left.valueScore ?? -1);
-        return (
-          (left.intelligenceRank ?? Infinity) -
-          (right.intelligenceRank ?? Infinity)
-        );
+        let leftValue: number | null;
+        let rightValue: number | null;
+        if (sort === "intelligence") {
+          leftValue = left.intelligence;
+          rightValue = right.intelligence;
+        } else if (sort === "input") {
+          leftValue = left.inputPrice;
+          rightValue = right.inputPrice;
+        } else if (sort === "output") {
+          leftValue = left.outputPrice;
+          rightValue = right.outputPrice;
+        } else {
+          leftValue = left.inputPrice * safeInputMillions + left.outputPrice * safeOutputMillions;
+          rightValue = right.inputPrice * safeInputMillions + right.outputPrice * safeOutputMillions;
+        }
+        if (leftValue === null) return rightValue === null ? 0 : 1;
+        if (rightValue === null) return -1;
+        return (leftValue - rightValue) * (sortDirection === "asc" ? 1 : -1);
       });
   });
   let totalPages = $derived(Math.max(1, Math.ceil(matchingModels.length / PAGE_SIZE)));
@@ -114,6 +129,20 @@
 
   function selectFilter(nextFilter: Filter) {
     filter = nextFilter;
+    pageNumber = 1;
+  }
+
+  function defaultSortDirection(nextSort: Sort): SortDirection {
+    return nextSort === "intelligence" ? "desc" : "asc";
+  }
+
+  function toggleSort(nextSort: Sort) {
+    if (sort === nextSort) {
+      sortDirection = sortDirection === "asc" ? "desc" : "asc";
+    } else {
+      sort = nextSort;
+      sortDirection = defaultSortDirection(nextSort);
+    }
     pageNumber = 1;
   }
 
@@ -240,13 +269,13 @@
         <article class="metric-card metric-models">
           <div class="metric-card-top"><span>Paid models</span><Database size={16} /></div>
           <div class="metric-value"><strong>{radar.summary.paidModels}</strong><span>routes</span></div>
-          <p>Free and dynamic-price routes excluded</p>
+          <p>{radar.summary.rankedModels} ranked by Artificial Analysis; free/dynamic routes excluded</p>
         </article>
-        <article class="metric-card metric-ranked">
-          <div class="metric-card-top"><span>Benchmarked</span><BrainCircuit size={16} /></div>
-          <div class="metric-value"><strong>{radar.summary.rankedModels}</strong><span>ranked</span></div>
-          <p>Artificial Analysis Intelligence Index</p>
-        </article>
+        <a class="metric-card metric-card-link metric-budget" href="#models" onclick={() => { activeSection = "models"; selectFilter("cheap"); }}>
+          <div class="metric-card-top"><span>Budget models</span><Wallet size={16} /></div>
+          <div class="metric-value"><strong>{radar.summary.cheapModels}</strong><span>models</span></div>
+          <p>At or below {money.format(radar.summary.cheapThreshold)} blended per 1M tokens</p>
+        </a>
         <a class="metric-card metric-card-link metric-news" href="#news" onclick={() => activeSection = "news"}>
           <div class="metric-card-top"><span>New articles</span><Newspaper size={16} /></div>
           <div class="metric-value"><strong>{recentArticleCount}</strong><span>{recentArticleCount === 1 ? "article" : "articles"}</span></div>
@@ -260,15 +289,6 @@
       </section>
 
       <section class="dashboard-section recommendations-section" aria-label="Top model recommendations">
-        <header class="panel-group-header">
-          <div class="section-title-group">
-            <span class="section-title-icon section-title-icon-orange"><Sparkles size={17} /></span>
-            <div class="section-title-copy">
-              <h2>Top models</h2>
-            </div>
-          </div>
-          <p>Rankings update against a workload of <strong>{safeInputMillions}M input</strong> and <strong>{safeOutputMillions}M output</strong> tokens.</p>
-        </header>
         <div class="recommendation-grid">
           <RecommendationCard eyebrow="BEST CAPABILITY" method="Paid OpenRouter models with an Artificial Analysis Intelligence Index are sorted from highest to lowest. The five highest-ranked models are shown." models={topQuality} tone="ink" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
           <RecommendationCard eyebrow="BEST UNDER BUDGET" method={`Paid models at or below ${money.format(radar.summary.cheapThreshold)} blended per 1M tokens are scored within the cheap set: 50% normalized Intelligence Index and 50% log-price affordability. The five highest scores are shown.`} models={topBudget} tone="lime" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
@@ -280,8 +300,8 @@
           <div class="section-title-group">
             <span class="section-title-icon section-title-icon-blue"><Newspaper size={17} /></span>
             <div class="section-title-copy">
-              <span class="section-kicker">Artificial Analysis</span>
               <h2 id="news-heading">Latest model news</h2>
+              <p>Artificial Analysis</p>
             </div>
           </div>
           <a href="https://artificialanalysis.ai/articles" target="_blank" rel="noreferrer">View all articles <ExternalLink size={14} /></a>
@@ -315,19 +335,64 @@
           </div>
           <div class="model-tools">
             <label class="search-box"><Search size={16} /><input bind:value={search} oninput={() => pageNumber = 1} placeholder="Search all models" aria-label="Search all models" /></label>
-            <select bind:value={sort} onchange={() => pageNumber = 1} aria-label="Sort models"><option value="rank">Sort: intelligence</option><option value="value">Sort: value</option><option value="price">Sort: price</option></select>
           </div>
         </div>
         <div class="filter-row" aria-label="Model filters">
           <button class:active={filter === "all"} aria-pressed={filter === "all"} onclick={() => selectFilter("all")}>All paid <span>{radar.summary.paidModels}</span></button>
           <button class:active={filter === "cheap"} aria-pressed={filter === "cheap"} onclick={() => selectFilter("cheap")}>Budget <span>{radar.summary.cheapModels}</span></button>
-          <button class:active={filter === "state-of-the-art"} aria-pressed={filter === "state-of-the-art"} onclick={() => selectFilter("state-of-the-art")}>Frontier <span>{radar.summary.stateOfTheArtModels}</span></button>
           <button class:active={filter === "changed"} aria-pressed={filter === "changed"} onclick={() => selectFilter("changed")}>Price changed <span>{radar.summary.priceIncreases + radar.summary.priceDrops}</span></button>
         </div>
 
         <div class="table-wrap" bind:this={modelTable}>
           <table>
-            <thead><tr><th class="model-col">Model</th><th class="rank-col">AA rank</th><th class="intelligence-col">Intelligence</th><th class="input-col">Input / 1M</th><th class="output-col">Output / 1M</th><th class="change-col">Price move</th><th class="monthly-col">Monthly est.</th><th class="action-col" aria-label="Model actions"></th></tr></thead>
+            <thead>
+              <tr>
+                <th class="model-col">Model</th>
+                <th class="rank-col">AA rank</th>
+                <th class="intelligence-col sortable-column" aria-sort={sort === "intelligence" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
+                  <button type="button" onclick={() => toggleSort("intelligence")}>
+                    Intelligence
+                    {#if sort === "intelligence"}
+                      {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
+                    {:else}
+                      <ArrowUpDown size={13} />
+                    {/if}
+                  </button>
+                </th>
+                <th class="input-col sortable-column" aria-sort={sort === "input" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
+                  <button type="button" onclick={() => toggleSort("input")}>
+                    Input / 1M
+                    {#if sort === "input"}
+                      {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
+                    {:else}
+                      <ArrowUpDown size={13} />
+                    {/if}
+                  </button>
+                </th>
+                <th class="output-col sortable-column" aria-sort={sort === "output" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
+                  <button type="button" onclick={() => toggleSort("output")}>
+                    Output / 1M
+                    {#if sort === "output"}
+                      {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
+                    {:else}
+                      <ArrowUpDown size={13} />
+                    {/if}
+                  </button>
+                </th>
+                <th class="change-col">Price move</th>
+                <th class="monthly-col sortable-column" aria-sort={sort === "monthly" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
+                  <button type="button" onclick={() => toggleSort("monthly")}>
+                    Monthly est.
+                    {#if sort === "monthly"}
+                      {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
+                    {:else}
+                      <ArrowUpDown size={13} />
+                    {/if}
+                  </button>
+                </th>
+                <th class="action-col" aria-label="Model actions"></th>
+              </tr>
+            </thead>
             <tbody>
               {#each pageModels as model (model.id)}
                 {@const monthlyCost = model.inputPrice * safeInputMillions + model.outputPrice * safeOutputMillions}

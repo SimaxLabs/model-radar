@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BrainCircuit, Info } from "@lucide/svelte";
+  import { BrainCircuit, Info, Wallet } from "@lucide/svelte";
   import ProviderLogo from "$lib/components/ProviderLogo.svelte";
   import { formatPrice, money } from "$lib/format";
   import type { RadarModel } from "$lib/types";
@@ -23,7 +23,10 @@
 
 <article class={`recommendation-card recommendation-${tone}`}>
   <div class="recommendation-eyebrow">
-    <span>{eyebrow}</span>
+    <span class="recommendation-label">
+      {#if tone === "ink"}<BrainCircuit size={16} />{:else}<Wallet size={16} />{/if}
+      {eyebrow}
+    </span>
     <details class="recommendation-info">
       <summary aria-label={`How ${eyebrow.toLowerCase()} is populated`}><Info size={16} /></summary>
       <div>
