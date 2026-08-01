@@ -15,6 +15,7 @@ RUN npm ci --ignore-scripts
 
 COPY svelte.config.js tsconfig.json vite.config.ts vitest.config.mts ./
 COPY src ./src
+COPY static ./static
 
 RUN npm run prepare && npm run build && npm prune --omit=dev --ignore-scripts
 

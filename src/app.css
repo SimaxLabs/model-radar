@@ -128,8 +128,10 @@ a {
   white-space: nowrap;
 }
 
-.topbar-brand svg {
-  color: var(--orange);
+.topbar-brand .brand-icon {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
 }
 
 .topbar-nav {
@@ -1447,8 +1449,10 @@ footer {
   white-space: nowrap;
 }
 
-.footer-brand svg {
-  color: var(--orange);
+.footer-brand .brand-icon {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 auto;
 }
 
 footer p {

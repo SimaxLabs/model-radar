@@ -165,7 +165,8 @@
 </script>
 
 <svelte:head>
-  <title>Model Radar | AI price intelligence</title>
+  <title>Model Radar</title>
+  <link rel="icon" type="image/svg+xml" href={`${base}/model-radar.svg`} />
   <meta name="description" content="Track paid OpenRouter model prices and compare them with independent Artificial Analysis intelligence benchmarks." />
 </svelte:head>
 
@@ -173,7 +174,7 @@
   <main class="main-content" id="top">
     <header class="topbar">
       <div class="topbar-left">
-        <a class="topbar-brand" href="#top" onclick={() => activeSection = "radar"}><Activity size={17} /><span>Model Radar</span></a>
+        <a class="topbar-brand" href="#top" aria-label="Model Radar" onclick={() => activeSection = "radar"}><img class="brand-icon" src={`${base}/model-radar.svg`} alt="" /><span>Model Radar</span></a>
       </div>
       <nav class="topbar-nav" aria-label="Dashboard navigation">
         <a class:active={activeSection === "radar"} href="#radar" onclick={() => activeSection = "radar"}><Gauge size={16} /><span>Overview</span></a>
@@ -376,7 +377,7 @@
       </section>
 
       <footer>
-        <div class="footer-brand"><Sparkles size={17} /> Model Radar</div>
+        <div class="footer-brand"><img class="brand-icon" src={`${base}/model-radar.svg`} alt="" /> Model Radar</div>
         <p>Pricing by <a href="https://openrouter.ai" target="_blank" rel="noreferrer">OpenRouter</a>. Benchmarks and news by <a href="https://artificialanalysis.ai" target="_blank" rel="noreferrer">Artificial Analysis</a>; benchmark indices supplied via OpenRouter.</p>
         <span>Snapshot {radar.snapshotDate}</span>
       </footer>
