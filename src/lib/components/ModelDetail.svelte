@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ExternalLink } from "@lucide/svelte";
-  import { formatPrice, money } from "$lib/format";
+  import { formatPrice, formatSyncTime, money } from "$lib/format";
   import type { ModelSegment, RadarModel } from "$lib/types";
   import ProviderLogo from "$lib/components/ProviderLogo.svelte";
   import PriceChange from "$lib/components/PriceChange.svelte";
@@ -63,7 +63,21 @@
     <dl class="detail-list">
       <div><dt>Input / 1M</dt><dd>{formatPrice(model.inputPrice)}</dd></div>
       <div><dt>Output / 1M</dt><dd>{formatPrice(model.outputPrice)}</dd></div>
-      <div><dt>Active price move</dt><dd><PriceChange value={model.priceChangePercent} /></dd></div>
+    </dl>
+  </section>
+
+  <section class="detail-section">
+    <div class="section-heading compact"><div><span class="section-kicker">PRICE MOVEMENT</span><h3>Direct rate changes</h3></div></div>
+    <dl class="detail-list">
+      <div><dt>Input movement</dt><dd><PriceChange value={model.inputPriceChangePercent} /></dd></div>
+      {#if model.previousInputPrice !== null && model.previousOutputPrice !== null}
+        <div><dt>Original input / 1M</dt><dd>{formatPrice(model.previousInputPrice)}</dd></div>
+      {/if}
+      <div><dt>Output movement</dt><dd><PriceChange value={model.outputPriceChangePercent} /></dd></div>
+      {#if model.previousInputPrice !== null && model.previousOutputPrice !== null}
+        <div><dt>Original output / 1M</dt><dd>{formatPrice(model.previousOutputPrice)}</dd></div>
+        <div><dt>Baseline recorded</dt><dd>{model.priceChangeBaselineAt ? formatSyncTime(model.priceChangeBaselineAt) : "Unavailable"}</dd></div>
+      {/if}
     </dl>
   </section>
 

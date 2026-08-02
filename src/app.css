@@ -1222,8 +1222,7 @@ tbody tr:hover td {
 .rank-col { min-width: 64px; }
 .intelligence-col { min-width: 92px; }
 .input-col,
-.output-col { min-width: 88px; }
-.change-col { min-width: 92px; }
+.output-col { min-width: 142px; }
 .monthly-col { min-width: 96px; }
 .action-col { width: 80px; }
 
@@ -1318,6 +1317,18 @@ tbody tr:hover td {
 .change-up { color: var(--red); }
 .change-down { color: var(--green); }
 .change-neutral { color: var(--faint); font-weight: 400; }
+
+.price-with-move {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.change-has-detail {
+  border-bottom: 1px dotted currentColor;
+  cursor: help;
+}
 
 .row-actions {
   display: flex;
@@ -2132,8 +2143,7 @@ footer a:hover {
     flex: 0 0 auto;
   }
 
-  .rank-col,
-  .change-col {
+  .rank-col {
     display: none;
   }
 

@@ -77,9 +77,14 @@
       preference: "low",
     },
     {
-      label: "Price move",
-      value: (model) => model.priceChangePercent,
-      display: (model) => formatChange(model.priceChangePercent),
+      label: "Input move",
+      value: (model) => model.inputPriceChangePercent,
+      display: (model) => formatChange(model.inputPriceChangePercent),
+    },
+    {
+      label: "Output move",
+      value: (model) => model.outputPriceChangePercent,
+      display: (model) => formatChange(model.outputPriceChangePercent),
     },
   ];
   const metricGroups = [

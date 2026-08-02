@@ -12,7 +12,7 @@ Model Radar is a Svelte 5 and SvelteKit application for tracking paid AI model p
 - Workload-based monthly cost estimates
 - Side-by-side comparison for up to four selected models
 - Paginated model index with full-catalog search, filters, and sorting
-- Cumulative price-movement tracking with refreshed 30-day retention
+- Cumulative input/output price-movement tracking with refreshed 30-day retention
 - Daily idempotent price snapshots retained for 30 days
 - Local libSQL development and Turso production persistence
 - Secret-protected daily sync endpoint

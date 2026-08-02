@@ -75,8 +75,11 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       inputPrice,
       outputPrice,
       blendedPrice,
-      previousBlendedPrice: null,
-      priceChangePercent: null,
+      previousInputPrice: null,
+      previousOutputPrice: null,
+      priceChangeBaselineAt: null,
+      inputPriceChangePercent: null,
+      outputPriceChangePercent: null,
       intelligence: finiteScore(benchmarks?.intelligence_index),
       coding: finiteScore(benchmarks?.coding_index),
       agentic: finiteScore(benchmarks?.agentic_index),
@@ -114,9 +117,14 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       rankedCount,
     );
     for (const model of models) {
-      const baselinePrice = movements.get(model.id)?.baselinePrice ?? null;
-      model.previousBlendedPrice = baselinePrice;
-      model.priceChangePercent = calculatePriceChange(model.blendedPrice, baselinePrice);
+      const movement = movements.get(model.id);
+      const baselineInputPrice = movement?.baselineInputPrice ?? null;
+      const baselineOutputPrice = movement?.baselineOutputPrice ?? null;
+      model.previousInputPrice = baselineInputPrice;
+      model.previousOutputPrice = baselineOutputPrice;
+      model.priceChangeBaselineAt = movement?.baselineCapturedAt ?? null;
+      model.inputPriceChangePercent = calculatePriceChange(model.inputPrice, baselineInputPrice);
+      model.outputPriceChangePercent = calculatePriceChange(model.outputPrice, baselineOutputPrice);
     }
     databaseStatus = {
       state: "live",
@@ -141,6 +149,14 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
     if (right.intelligenceRank === null) return -1;
     return left.intelligenceRank - right.intelligenceRank;
   });
+  const rateChanges = models
+    .flatMap((model) => [model.inputPriceChangePercent, model.outputPriceChangePercent])
+    .filter((change): change is number => change !== null && Math.abs(change) >= 0.001);
+  const priceChangedModels = models.filter((model) =>
+    [model.inputPriceChangePercent, model.outputPriceChangePercent].some(
+      (change) => change !== null && Math.abs(change) >= 0.001,
+    ),
+  ).length;
 
   return {
     generatedAt,
@@ -151,8 +167,9 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       rankedModels: rankedCount,
       cheapModels: models.filter((model) => model.isCheap).length,
       stateOfTheArtModels: models.filter((model) => model.isStateOfTheArt).length,
-      priceIncreases: models.filter((model) => (model.priceChangePercent ?? 0) > 0.001).length,
-      priceDrops: models.filter((model) => (model.priceChangePercent ?? 0) < -0.001).length,
+      priceChangedModels,
+      priceIncreases: rateChanges.filter((change) => change > 0.001).length,
+      priceDrops: rateChanges.filter((change) => change < -0.001).length,
       cheapThreshold,
     },
     sources: {
@@ -204,6 +221,7 @@ export function unavailableRadarData(): RadarData {
       rankedModels: 0,
       cheapModels: 0,
       stateOfTheArtModels: 0,
+      priceChangedModels: 0,
       priceIncreases: 0,
       priceDrops: 0,
       cheapThreshold: positiveNumber(env.CHEAP_MODEL_MAX_PRICE, 1),

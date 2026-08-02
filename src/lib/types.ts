@@ -46,8 +46,11 @@ export interface RadarModel {
   inputPrice: number;
   outputPrice: number;
   blendedPrice: number;
-  previousBlendedPrice: number | null;
-  priceChangePercent: number | null;
+  previousInputPrice: number | null;
+  previousOutputPrice: number | null;
+  priceChangeBaselineAt: string | null;
+  inputPriceChangePercent: number | null;
+  outputPriceChangePercent: number | null;
   intelligence: number | null;
   coding: number | null;
   agentic: number | null;
@@ -63,6 +66,7 @@ export interface RadarSummary {
   rankedModels: number;
   cheapModels: number;
   stateOfTheArtModels: number;
+  priceChangedModels: number;
   priceIncreases: number;
   priceDrops: number;
   cheapThreshold: number;

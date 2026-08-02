@@ -21,7 +21,12 @@ export const priceMovements = sqliteTable(
   {
     modelId: text("model_id").primaryKey(),
     baselinePrice: real("baseline_price").notNull(),
+    baselineCapturedAt: text("baseline_captured_at"),
+    baselineInputPrice: real("baseline_input_price"),
+    baselineOutputPrice: real("baseline_output_price"),
     currentPrice: real("current_price").notNull(),
+    currentInputPrice: real("current_input_price"),
+    currentOutputPrice: real("current_output_price"),
     changedAt: text("changed_at").notNull(),
   },
   (table) => [index("price_movements_changed_at").on(table.changedAt)],

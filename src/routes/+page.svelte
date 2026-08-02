@@ -27,7 +27,7 @@
   import ProviderLogo from "$lib/components/ProviderLogo.svelte";
   import RecommendationCard from "$lib/components/RecommendationCard.svelte";
   import SourcePill from "$lib/components/SourcePill.svelte";
-  import { formatPrice, money } from "$lib/format";
+  import { formatPrice, formatSyncTime, money } from "$lib/format";
   import { rankBudgetModels } from "$lib/scoring";
   import { PRICE_CHANGE_RETENTION_DAYS, type RadarData, type RadarModel } from "$lib/types";
   import type { PageData } from "./$types";
@@ -89,15 +89,19 @@
   let topBudget = $derived(
     rankBudgetModels(radar.models).slice(0, RECOMMENDATION_COUNT),
   );
+
+  function hasPriceChange(model: RadarModel) {
+    return [model.inputPriceChangePercent, model.outputPriceChangePercent].some(
+      (change) => change !== null && Math.abs(change) >= 0.001,
+    );
+  }
+
   let matchingModels = $derived.by(() => {
     const query = search.trim().toLowerCase();
     return radar.models
       .filter((model) => {
         if (filter === "cheap" && !model.isCheap) return false;
-        if (
-          filter === "changed" &&
-          (model.priceChangePercent === null || Math.abs(model.priceChangePercent) < 0.001)
-        ) return false;
+        if (filter === "changed" && !hasPriceChange(model)) return false;
         return !query || `${model.name} ${model.provider} ${model.id}`.toLowerCase().includes(query);
       })
       .sort((left, right) => {
@@ -162,6 +166,15 @@
   function removeComparison(modelId: string) {
     comparisonIds = comparisonIds.filter((candidate) => candidate !== modelId);
     if (comparisonIds.length < COMPARISON_MIN) comparisonOpen = false;
+  }
+
+  function priceMoveDetail(model: RadarModel, rate: "input" | "output") {
+    const originalPrice = rate === "input" ? model.previousInputPrice : model.previousOutputPrice;
+    if (originalPrice === null) return undefined;
+    const recordedAt = model.priceChangeBaselineAt
+      ? formatSyncTime(model.priceChangeBaselineAt)
+      : "Unavailable";
+    return `Original ${rate} price: ${formatPrice(originalPrice)} / 1M tokens\nRecorded: ${recordedAt}`;
   }
 
   function clearComparison() {
@@ -283,7 +296,7 @@
         </a>
         <a class="metric-card metric-card-link metric-moves" href="#models" onclick={() => { activeSection = "models"; selectFilter("changed"); }}>
           <div class="metric-card-top"><span>Price movement</span><Activity size={16} /></div>
-          <div class="metric-value"><strong>{radar.summary.priceIncreases + radar.summary.priceDrops}</strong><span>changes</span></div>
+          <div class="metric-value"><strong>{radar.summary.priceIncreases + radar.summary.priceDrops}</strong><span>rate changes</span></div>
           <p><span class="move-down">{radar.summary.priceDrops} down</span><span class="move-up">{radar.summary.priceIncreases} up</span><span class="movement-refresh">{PRICE_CHANGE_RETENTION_DAYS}d retention / 1h refresh</span></p>
         </a>
       </section>
@@ -340,7 +353,7 @@
         <div class="filter-row" aria-label="Model filters">
           <button class:active={filter === "all"} aria-pressed={filter === "all"} onclick={() => selectFilter("all")}>All paid <span>{radar.summary.paidModels}</span></button>
           <button class:active={filter === "cheap"} aria-pressed={filter === "cheap"} onclick={() => selectFilter("cheap")}>Budget <span>{radar.summary.cheapModels}</span></button>
-          <button class:active={filter === "changed"} aria-pressed={filter === "changed"} onclick={() => selectFilter("changed")}>Price changed <span>{radar.summary.priceIncreases + radar.summary.priceDrops}</span></button>
+          <button class:active={filter === "changed"} aria-pressed={filter === "changed"} onclick={() => selectFilter("changed")}>Price changed <span>{radar.summary.priceChangedModels}</span></button>
         </div>
 
         <div class="table-wrap" bind:this={modelTable}>
@@ -379,7 +392,6 @@
                     {/if}
                   </button>
                 </th>
-                <th class="change-col">Price move</th>
                 <th class="monthly-col sortable-column" aria-sort={sort === "monthly" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
                   <button type="button" onclick={() => toggleSort("monthly")}>
                     Monthly est.
@@ -401,8 +413,9 @@
                   <td class="model-col"><button class="model-identity" onclick={() => selectedModel = model}><ProviderLogo provider={model.provider} size="small" /><span><strong>{model.name}</strong></span></button></td>
                   <td class="rank-col">{model.intelligenceRank ? `#${model.intelligenceRank}` : "-"}</td>
                   <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></td>
-                  <td class="input-col">{formatPrice(model.inputPrice)}</td><td class="output-col">{formatPrice(model.outputPrice)}</td>
-                  <td class="change-col">{#if model.priceChangePercent !== null && Math.abs(model.priceChangePercent) >= 0.001}<PriceChange value={model.priceChangePercent} />{/if}</td><td class="monthly-col"><strong>{money.format(monthlyCost)}</strong></td>
+                  <td class="input-col"><span class="price-with-move"><span>{formatPrice(model.inputPrice)}</span>{#if model.inputPriceChangePercent !== null && Math.abs(model.inputPriceChangePercent) >= 0.001}<PriceChange value={model.inputPriceChangePercent} detail={priceMoveDetail(model, "input")} />{/if}</span></td>
+                  <td class="output-col"><span class="price-with-move"><span>{formatPrice(model.outputPrice)}</span>{#if model.outputPriceChangePercent !== null && Math.abs(model.outputPriceChangePercent) >= 0.001}<PriceChange value={model.outputPriceChangePercent} detail={priceMoveDetail(model, "output")} />{/if}</span></td>
+                  <td class="monthly-col"><strong>{money.format(monthlyCost)}</strong></td>
                   <td class="action-col">
                     <div class="row-actions">
                       <button

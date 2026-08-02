@@ -50,6 +50,67 @@ const migrations = [
         ON price_movements (changed_at)`,
     ],
   },
+  {
+    id: "0002_price_movement_baseline_time",
+    statements: [
+      "ALTER TABLE price_movements ADD COLUMN baseline_captured_at TEXT",
+      `UPDATE price_movements
+        SET baseline_captured_at = COALESCE(
+          (
+            SELECT captured_at
+            FROM price_snapshots
+            WHERE price_snapshots.model_id = price_movements.model_id
+              AND price_snapshots.blended_price = price_movements.baseline_price
+            ORDER BY captured_on DESC
+            LIMIT 1
+          ),
+          changed_at
+        )
+        WHERE baseline_captured_at IS NULL`,
+    ],
+  },
+  {
+    id: "0003_direct_price_movements",
+    statements: [
+      "ALTER TABLE price_movements ADD COLUMN baseline_input_price REAL",
+      "ALTER TABLE price_movements ADD COLUMN baseline_output_price REAL",
+      "ALTER TABLE price_movements ADD COLUMN current_input_price REAL",
+      "ALTER TABLE price_movements ADD COLUMN current_output_price REAL",
+      `UPDATE price_movements
+        SET baseline_input_price = (
+          SELECT input_price
+          FROM price_snapshots
+          WHERE price_snapshots.model_id = price_movements.model_id
+            AND price_snapshots.blended_price = price_movements.baseline_price
+          ORDER BY captured_on DESC
+          LIMIT 1
+        ),
+        baseline_output_price = (
+          SELECT output_price
+          FROM price_snapshots
+          WHERE price_snapshots.model_id = price_movements.model_id
+            AND price_snapshots.blended_price = price_movements.baseline_price
+          ORDER BY captured_on DESC
+          LIMIT 1
+        ),
+        current_input_price = (
+          SELECT input_price
+          FROM price_snapshots
+          WHERE price_snapshots.model_id = price_movements.model_id
+            AND price_snapshots.blended_price = price_movements.current_price
+          ORDER BY captured_on DESC
+          LIMIT 1
+        ),
+        current_output_price = (
+          SELECT output_price
+          FROM price_snapshots
+          WHERE price_snapshots.model_id = price_movements.model_id
+            AND price_snapshots.blended_price = price_movements.current_price
+          ORDER BY captured_on DESC
+          LIMIT 1
+        )`,
+    ],
+  },
 ] as const;
 
 function createConnection(): DatabaseConnection {
