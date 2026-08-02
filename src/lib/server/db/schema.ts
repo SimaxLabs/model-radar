@@ -16,6 +16,17 @@ export const priceSnapshots = sqliteTable(
   ],
 );
 
+export const priceMovements = sqliteTable(
+  "price_movements",
+  {
+    modelId: text("model_id").primaryKey(),
+    baselinePrice: real("baseline_price").notNull(),
+    currentPrice: real("current_price").notNull(),
+    changedAt: text("changed_at").notNull(),
+  },
+  (table) => [index("price_movements_changed_at").on(table.changedAt)],
+);
+
 export const syncRuns = sqliteTable("sync_runs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   capturedAt: text("captured_at").notNull(),
@@ -23,4 +34,4 @@ export const syncRuns = sqliteTable("sync_runs", {
   rankedCount: integer("ranked_count").notNull(),
 });
 
-export const schema = { priceSnapshots, syncRuns };
+export const schema = { priceSnapshots, priceMovements, syncRuns };

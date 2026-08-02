@@ -1,6 +1,6 @@
 import { env } from "$env/dynamic/private";
 import { getDatabase } from "$lib/server/db/client";
-import { getPreviousPrices, saveDailySnapshot } from "$lib/server/db/snapshots";
+import { syncPriceHistory } from "$lib/server/db/snapshots";
 import { fetchOpenRouterModels } from "$lib/server/openrouter";
 import { calculateBlendedPrice, calculatePriceChange } from "$lib/scoring";
 import type { RadarData, RadarModel } from "$lib/types";
@@ -56,34 +56,12 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
   const cheapThreshold = positiveNumber(env.CHEAP_MODEL_MAX_PRICE, 1);
   const openRouterModels = await fetchOpenRouterModels(force);
 
-  let previousPrices = new Map<string, number>();
-  let databaseStatus: RadarData["sources"]["database"] = {
-    state: "live",
-    label: "History connected",
-    detail: "Daily model prices are being stored.",
-  };
-  let databaseKind: "local" | "turso" = "local";
-
-  try {
-    databaseKind = (await getDatabase()).kind;
-    previousPrices = await getPreviousPrices(
-      openRouterModels.map((model) => model.id),
-      snapshotDate,
-    );
-  } catch (error) {
-    console.error("Price history read failed", error);
-    databaseStatus = {
-      state: "unavailable",
-      label: "History unavailable",
-      detail: "Live pricing works, but price history could not be read.",
-    };
-  }
+  let databaseStatus: RadarData["sources"]["database"];
 
   const models: RadarModel[] = openRouterModels.map((model) => {
     const inputPrice = Number(model.pricing.prompt) * MILLION;
     const outputPrice = Number(model.pricing.completion) * MILLION;
     const blendedPrice = calculateBlendedPrice(inputPrice, outputPrice);
-    const previousBlendedPrice = previousPrices.get(model.id) ?? null;
     const isCheap = blendedPrice <= cheapThreshold;
     const benchmarks = model.benchmarks?.artificial_analysis;
 
@@ -97,8 +75,8 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       inputPrice,
       outputPrice,
       blendedPrice,
-      previousBlendedPrice,
-      priceChangePercent: calculatePriceChange(blendedPrice, previousBlendedPrice),
+      previousBlendedPrice: null,
+      priceChangePercent: null,
       intelligence: finiteScore(benchmarks?.intelligence_index),
       coding: finiteScore(benchmarks?.coding_index),
       agentic: finiteScore(benchmarks?.agentic_index),
@@ -122,43 +100,47 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
     }
   }
 
+  const rankedCount = rankedModels.length;
+  try {
+    const databaseKind = (await getDatabase()).kind;
+    const movements = await syncPriceHistory(
+      models.map((model) => ({
+        modelId: model.id,
+        inputPrice: model.inputPrice,
+        outputPrice: model.outputPrice,
+        blendedPrice: model.blendedPrice,
+      })),
+      capturedAt,
+      rankedCount,
+    );
+    for (const model of models) {
+      const baselinePrice = movements.get(model.id)?.baselinePrice ?? null;
+      model.previousBlendedPrice = baselinePrice;
+      model.priceChangePercent = calculatePriceChange(model.blendedPrice, baselinePrice);
+    }
+    databaseStatus = {
+      state: "live",
+      label: databaseKind === "turso" ? "Turso connected" : "Local history",
+      detail:
+        databaseKind === "turso"
+          ? "Price movements and 30 days of daily prices are persisted in Turso."
+          : "Price movements and 30 days of daily prices are persisted in local libSQL.",
+    };
+  } catch (error) {
+    console.error("Price history sync failed", error);
+    databaseStatus = {
+      state: "unavailable",
+      label: "History unavailable",
+      detail: "Live pricing works, but price movements could not be synchronized.",
+    };
+  }
+
   addValueScores(models);
   models.sort((left, right) => {
     if (left.intelligenceRank === null) return 1;
     if (right.intelligenceRank === null) return -1;
     return left.intelligenceRank - right.intelligenceRank;
   });
-
-  const rankedCount = rankedModels.length;
-  if (databaseStatus.state === "live") {
-    try {
-      await saveDailySnapshot(
-        models.map((model) => ({
-          modelId: model.id,
-          inputPrice: model.inputPrice,
-          outputPrice: model.outputPrice,
-          blendedPrice: model.blendedPrice,
-        })),
-        capturedAt,
-        rankedCount,
-      );
-      databaseStatus = {
-        state: "live",
-        label: databaseKind === "turso" ? "Turso connected" : "Local history",
-        detail:
-          databaseKind === "turso"
-            ? "Daily prices are persisted in Turso."
-            : "Daily prices are persisted in local libSQL.",
-      };
-    } catch (error) {
-      console.error("Price history write failed", error);
-      databaseStatus = {
-        state: "unavailable",
-        label: "History unavailable",
-        detail: "Live pricing works, but today's snapshot could not be saved.",
-      };
-    }
-  }
 
   return {
     generatedAt,

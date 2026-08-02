@@ -63,7 +63,7 @@
     <dl class="detail-list">
       <div><dt>Input / 1M</dt><dd>{formatPrice(model.inputPrice)}</dd></div>
       <div><dt>Output / 1M</dt><dd>{formatPrice(model.outputPrice)}</dd></div>
-      <div><dt>Since prior snapshot</dt><dd><PriceChange value={model.priceChangePercent} /></dd></div>
+      <div><dt>Active price move</dt><dd><PriceChange value={model.priceChangePercent} /></dd></div>
     </dl>
   </section>
 

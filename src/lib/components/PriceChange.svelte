@@ -6,7 +6,7 @@
 </script>
 
 {#if value === null || Math.abs(value) < 0.001}
-  <span class="change-neutral">Baseline</span>
+  <span class="change-neutral">No active change</span>
 {:else if value > 0}
   <span class="change-up"><ArrowUpRight size={14} />{formatChange(value)}</span>
 {:else}

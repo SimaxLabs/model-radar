@@ -29,7 +29,7 @@
   import SourcePill from "$lib/components/SourcePill.svelte";
   import { formatPrice, money } from "$lib/format";
   import { rankBudgetModels } from "$lib/scoring";
-  import type { RadarData, RadarModel } from "$lib/types";
+  import { PRICE_CHANGE_RETENTION_DAYS, type RadarData, type RadarModel } from "$lib/types";
   import type { PageData } from "./$types";
 
   type Filter = "all" | "cheap" | "changed";
@@ -284,7 +284,7 @@
         <a class="metric-card metric-card-link metric-moves" href="#models" onclick={() => { activeSection = "models"; selectFilter("changed"); }}>
           <div class="metric-card-top"><span>Price movement</span><Activity size={16} /></div>
           <div class="metric-value"><strong>{radar.summary.priceIncreases + radar.summary.priceDrops}</strong><span>changes</span></div>
-          <p><span class="move-down">{radar.summary.priceDrops} down</span><span class="move-up">{radar.summary.priceIncreases} up</span><span class="movement-refresh">1h refresh</span></p>
+          <p><span class="move-down">{radar.summary.priceDrops} down</span><span class="move-up">{radar.summary.priceIncreases} up</span><span class="movement-refresh">{PRICE_CHANGE_RETENTION_DAYS}d retention / 1h refresh</span></p>
         </a>
       </section>
 

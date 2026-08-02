@@ -37,6 +37,19 @@ const migrations = [
       )`,
     ],
   },
+  {
+    id: "0001_active_price_movements",
+    statements: [
+      `CREATE TABLE IF NOT EXISTS price_movements (
+        model_id TEXT PRIMARY KEY,
+        baseline_price REAL NOT NULL,
+        current_price REAL NOT NULL,
+        changed_at TEXT NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS price_movements_changed_at
+        ON price_movements (changed_at)`,
+    ],
+  },
 ] as const;
 
 function createConnection(): DatabaseConnection {

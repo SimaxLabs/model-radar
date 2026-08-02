@@ -70,6 +70,6 @@ export function formatSyncTime(value: string) {
 }
 
 export function formatChange(value: number | null) {
-  if (value === null || Math.abs(value) < 0.001) return "No prior snapshot";
+  if (value === null || Math.abs(value) < 0.001) return "No active change";
   return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
 }

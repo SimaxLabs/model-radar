@@ -1,5 +1,7 @@
 export type SourceState = "live" | "unavailable";
 
+export const PRICE_CHANGE_RETENTION_DAYS = 30;
+
 export interface SourceStatus {
   state: SourceState;
   label: string;
