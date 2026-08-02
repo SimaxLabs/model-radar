@@ -149,13 +149,17 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
     if (right.intelligenceRank === null) return -1;
     return left.intelligenceRank - right.intelligenceRank;
   });
-  const rateChanges = models
-    .flatMap((model) => [model.inputPriceChangePercent, model.outputPriceChangePercent])
-    .filter((change): change is number => change !== null && Math.abs(change) >= 0.001);
-  const priceChangedModels = models.filter((model) =>
-    [model.inputPriceChangePercent, model.outputPriceChangePercent].some(
-      (change) => change !== null && Math.abs(change) >= 0.001,
-    ),
+  const modelPriceDirections = models.map((model) => {
+    const changes = [model.inputPriceChangePercent, model.outputPriceChangePercent].filter(
+      (change): change is number => change !== null && Math.abs(change) >= 0.001,
+    );
+    return {
+      increased: changes.some((change) => change > 0),
+      dropped: changes.some((change) => change < 0),
+    };
+  });
+  const priceChangedModels = modelPriceDirections.filter(
+    ({ increased, dropped }) => increased || dropped,
   ).length;
 
   return {
@@ -168,8 +172,12 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       cheapModels: models.filter((model) => model.isCheap).length,
       stateOfTheArtModels: models.filter((model) => model.isStateOfTheArt).length,
       priceChangedModels,
-      priceIncreases: rateChanges.filter((change) => change > 0.001).length,
-      priceDrops: rateChanges.filter((change) => change < -0.001).length,
+      priceIncreases: modelPriceDirections.filter(({ increased, dropped }) => increased && !dropped)
+        .length,
+      priceDrops: modelPriceDirections.filter(({ increased, dropped }) => dropped && !increased)
+        .length,
+      priceMixed: modelPriceDirections.filter(({ increased, dropped }) => increased && dropped)
+        .length,
       cheapThreshold,
     },
     sources: {
@@ -224,6 +232,7 @@ export function unavailableRadarData(): RadarData {
       priceChangedModels: 0,
       priceIncreases: 0,
       priceDrops: 0,
+      priceMixed: 0,
       cheapThreshold: positiveNumber(env.CHEAP_MODEL_MAX_PRICE, 1),
     },
     sources: {

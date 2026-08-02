@@ -296,8 +296,8 @@
         </a>
         <a class="metric-card metric-card-link metric-moves" href="#models" onclick={() => { activeSection = "models"; selectFilter("changed"); }}>
           <div class="metric-card-top"><span>Price movement</span><Activity size={16} /></div>
-          <div class="metric-value"><strong>{radar.summary.priceIncreases + radar.summary.priceDrops}</strong><span>rate changes</span></div>
-          <p><span class="move-down">{radar.summary.priceDrops} down</span><span class="move-up">{radar.summary.priceIncreases} up</span><span class="movement-refresh">{PRICE_CHANGE_RETENTION_DAYS}d retention / 1h refresh</span></p>
+          <div class="metric-value"><strong>{radar.summary.priceChangedModels}</strong><span>models</span></div>
+          <p><span class="move-down">{radar.summary.priceDrops} down</span><span class="move-up">{radar.summary.priceIncreases} up</span><span class="move-mixed">{radar.summary.priceMixed} mixed</span><span class="movement-refresh">{PRICE_CHANGE_RETENTION_DAYS}d retention / 1h refresh</span></p>
         </a>
       </section>
 

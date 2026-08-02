@@ -601,6 +601,7 @@ a {
 
 .move-down { color: var(--green); }
 .move-up { color: var(--red); }
+.move-mixed { color: var(--blue); }
 .movement-refresh { margin-left: auto; white-space: nowrap; }
 
 .dashboard-section {

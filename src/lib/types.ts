@@ -69,6 +69,7 @@ export interface RadarSummary {
   priceChangedModels: number;
   priceIncreases: number;
   priceDrops: number;
+  priceMixed: number;
   cheapThreshold: number;
 }
 
