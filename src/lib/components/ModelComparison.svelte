@@ -27,13 +27,7 @@
   let dialog: HTMLDialogElement;
   const capabilityMetrics: ComparisonMetric[] = [
     {
-      label: "AA rank",
-      value: (model) => model.intelligenceRank,
-      display: (model) => model.intelligenceRank ? `#${model.intelligenceRank}` : "-",
-      preference: "low",
-    },
-    {
-      label: "Intelligence",
+      label: "AA Index",
       value: (model) => model.intelligence,
       display: (model) => model.intelligence?.toString() ?? "-",
       preference: "high",

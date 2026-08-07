@@ -352,8 +352,8 @@
 
       <section class="dashboard-section recommendations-section" aria-label="Top model recommendations">
         <div class="recommendation-grid">
-          <RecommendationCard eyebrow="BEST CAPABILITY" method="Paid OpenRouter models with an Artificial Analysis Intelligence Index are sorted from highest to lowest. The five highest-ranked models are shown." models={topQuality} tone="ink" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
-          <RecommendationCard eyebrow="BEST UNDER BUDGET" method={`Paid models at or below ${money.format(radar.summary.cheapThreshold)} blended per 1M tokens are scored within the cheap set: 50% normalized Intelligence Index and 50% log-price affordability. The five highest scores are shown.`} models={topBudget} tone="lime" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
+          <RecommendationCard eyebrow="BEST CAPABILITY" method="Paid OpenRouter models with an AA Index are sorted from highest to lowest. The five highest-ranked models are shown." models={topQuality} tone="ink" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
+          <RecommendationCard eyebrow="BEST UNDER BUDGET" method={`Paid models at or below ${money.format(radar.summary.cheapThreshold)} blended per 1M tokens are scored within the cheap set: 50% normalized AA Index and 50% log-price affordability. The five highest scores are shown.`} models={topBudget} tone="lime" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
         </div>
       </section>
 
@@ -418,14 +418,9 @@
             <thead>
               <tr>
                 <th class="model-col">Model</th>
-                {#if filter === "free"}
-                  <th class="limit-col">Context window</th>
-                {:else}
-                  <th class="rank-col">AA rank</th>
-                {/if}
                 <th class="intelligence-col sortable-column" aria-sort={sort === "intelligence" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
                   <button type="button" onclick={() => toggleSort("intelligence")}>
-                    Intelligence
+                    AA Index
                     {#if sort === "intelligence"}
                       {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
                     {:else}
@@ -433,6 +428,9 @@
                     {/if}
                   </button>
                 </th>
+                {#if filter === "free"}
+                  <th class="limit-col">Context window</th>
+                {/if}
                 {#if filter === "free"}
                   <th class="limit-col">Max output</th>
                   <th class="limit-col">Requests / min</th>
@@ -472,7 +470,7 @@
                 {/if}
                 {#if filter === "free"}
                   <th class="limit-col">Requests / day</th>
-                {:else}
+                {:else if filter !== "changed"}
                   <th class="monthly-col sortable-column" aria-sort={sort === "monthly" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
                     <button type="button" onclick={() => toggleSort("monthly")}>
                       Monthly est.
@@ -493,12 +491,10 @@
                 {@const inComparison = comparisonIds.includes(model.id)}
                 <tr>
                   <td class="model-col"><button class="model-identity" onclick={() => selectedModel = model}><ProviderLogo provider={model.provider} size="small" /><span><strong>{model.name}</strong></span></button></td>
+                  <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></td>
                   {#if filter === "free"}
                     <td class="limit-col limit-cell"><strong>{formatTokenLimit(model.contextLength)}</strong><span>tokens</span></td>
-                  {:else}
-                    <td class="rank-col">{model.intelligenceRank ? `#${model.intelligenceRank}` : "-"}</td>
                   {/if}
-                  <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></td>
                   {#if filter === "free"}
                     <td class="limit-col limit-cell"><strong>{formatTokenLimit(model.maxCompletionTokens)}</strong>{#if model.maxCompletionTokens !== null}<span>tokens</span>{/if}</td>
                     <td class="limit-col limit-cell"><strong>20</strong><span>shared</span></td>
@@ -511,7 +507,7 @@
                   {/if}
                   {#if filter === "free"}
                     <td class="limit-col limit-cell"><strong>50 / 1,000</strong><span>shared</span></td>
-                  {:else}
+                  {:else if filter !== "changed"}
                     <td class="monthly-col"><strong>{money.format(monthlyCost)}</strong></td>
                   {/if}
                   <td class="action-col">

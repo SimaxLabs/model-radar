@@ -1239,7 +1239,6 @@ tbody tr:hover td {
   width: 30%;
 }
 
-.rank-col { min-width: 64px; }
 .intelligence-col { min-width: 92px; }
 .limit-col { min-width: 112px; }
 .input-col,
@@ -2192,10 +2191,6 @@ footer a:hover {
 
   .filter-row button {
     flex: 0 0 auto;
-  }
-
-  .rank-col {
-    display: none;
   }
 
   .model-col {

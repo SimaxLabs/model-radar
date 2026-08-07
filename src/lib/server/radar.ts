@@ -206,7 +206,7 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
           : {
               state: "unavailable",
               label: "Benchmarks unavailable",
-              detail: "OpenRouter returned no Intelligence Index data.",
+              detail: "OpenRouter returned no AA Index data.",
             },
       database: databaseStatus,
     },

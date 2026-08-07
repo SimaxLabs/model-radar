@@ -6,7 +6,7 @@ Model Radar is a Svelte 5 and SvelteKit application for tracking paid AI model p
 
 - Live paid-model pricing from OpenRouter
 - Free, zero-priced, and dynamic-price routes excluded
-- Artificial Analysis Intelligence, Coding, and Agentic indices from OpenRouter
+- Artificial Analysis AA Index, Coding Index, and Agentic Index data from OpenRouter
 - Local creator logos for major model providers with accessible fallbacks
 - Cheap and frontier model segments
 - Workload-based monthly cost estimates
@@ -66,12 +66,12 @@ Only this authenticated endpoint bypasses the OpenRouter source cache. Public re
 
 - **Blended price:** 75% input price and 25% output price, per one million total tokens.
 - **Cheap:** blended price at or below `CHEAP_MODEL_MAX_PRICE`, defaulting to `$1`.
-- **Frontier:** the top 10 paid OpenRouter models with the highest Artificial Analysis Intelligence Index.
-- **Value score:** 75% normalized intelligence and 25% log-price efficiency.
-- **Budget shortlist:** models below the cheap threshold ranked by a 50/50 blend of normalized intelligence and log-price affordability.
+- **Frontier:** the top 10 paid OpenRouter models with the highest AA Index.
+- **Value score:** 75% normalized AA Index and 25% log-price efficiency.
+- **Budget shortlist:** models below the cheap threshold ranked by a 50/50 blend of normalized AA Index and log-price affordability.
 - **Special variants:** free and batch routes appear only in their dedicated model-table tabs and are excluded from paid rankings and recommendations.
 
-OpenRouter attaches benchmark scores directly to its model IDs, so no fuzzy model matching is required. Models without an Intelligence Index remain available for pricing but are excluded from frontier and value rankings.
+OpenRouter attaches benchmark scores directly to its model IDs, so no fuzzy model matching is required. Models without an AA Index remain available for pricing but are excluded from frontier and value rankings.
 
 ## Production
 

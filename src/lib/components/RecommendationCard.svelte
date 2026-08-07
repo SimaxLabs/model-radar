@@ -41,7 +41,7 @@
         <thead>
           <tr>
             <th scope="col">Model</th>
-            <th scope="col">AA index</th>
+            <th scope="col">AA Index</th>
             <th scope="col">Input / 1M</th>
             <th scope="col">Output / 1M</th>
             <th scope="col">Your monthly</th>
@@ -70,7 +70,7 @@
     <div class="recommendation-empty">
       <BrainCircuit size={25} />
       <strong>Benchmark data unavailable</strong>
-      <p>OpenRouter has not supplied an Intelligence Index for this view.</p>
+      <p>OpenRouter has not supplied an AA Index for this view.</p>
     </div>
   {/if}
 </article>
