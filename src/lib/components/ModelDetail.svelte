@@ -5,6 +5,8 @@
   import ProviderLogo from "$lib/components/ProviderLogo.svelte";
   import PriceChange from "$lib/components/PriceChange.svelte";
 
+  const tokenCount = new Intl.NumberFormat("en");
+
   let {
     model,
     inputMillions,
@@ -86,6 +88,7 @@
   <section class="detail-section">
     <div class="section-heading compact"><div><span class="section-kicker">CAPABILITY</span><h3>Artificial Analysis via OpenRouter</h3></div></div>
     <dl class="detail-list">
+      <div><dt>Context window</dt><dd>{tokenCount.format(model.contextLength)} tokens</dd></div>
       <div><dt>AA Index</dt><dd>{model.intelligence ?? "Not available"}</dd></div>
       <div><dt>Coding index</dt><dd>{model.coding ?? "-"}</dd></div>
       <div><dt>Agentic index</dt><dd>{model.agentic ?? "-"}</dd></div>
