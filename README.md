@@ -69,6 +69,7 @@ Only this authenticated endpoint bypasses the OpenRouter source cache. Public re
 - **Frontier:** the top 10 paid OpenRouter models with the highest Artificial Analysis Intelligence Index.
 - **Value score:** 75% normalized intelligence and 25% log-price efficiency.
 - **Budget shortlist:** models below the cheap threshold ranked by a 50/50 blend of normalized intelligence and log-price affordability.
+- **Special variants:** free and batch routes appear only in their dedicated model-table tabs and are excluded from paid rankings and recommendations.
 
 OpenRouter attaches benchmark scores directly to its model IDs, so no fuzzy model matching is required. Models without an Intelligence Index remain available for pricing but are excluded from frontier and value rankings.
 

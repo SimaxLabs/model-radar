@@ -1684,6 +1684,18 @@ footer a:hover {
   color: #91d989;
 }
 
+.segment-tag.segment-free {
+  border-color: #426b3d;
+  background: rgba(115, 191, 105, 0.1);
+  color: #91d989;
+}
+
+.segment-tag.segment-batch {
+  border-color: #385f78;
+  background: rgba(86, 164, 212, 0.1);
+  color: #78bde7;
+}
+
 .detail-callout {
   margin-top: 20px;
   padding: 16px;

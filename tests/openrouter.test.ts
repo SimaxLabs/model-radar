@@ -45,7 +45,7 @@ describe("OpenRouter models", () => {
     });
   });
 
-  it("excludes batch model variants", async () => {
+  it("keeps free and batch variants while excluding other zero-priced routes", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
@@ -70,6 +70,33 @@ describe("OpenRouter models", () => {
                 expiration_date: null,
                 pricing: { prompt: "0.000001", completion: "0.000005" },
               },
+              {
+                id: "example/model:free",
+                canonical_slug: "example/model-2026-01-01",
+                name: "Example: Model (free)",
+                context_length: 128_000,
+                created: 1_700_000_000,
+                expiration_date: null,
+                pricing: { prompt: "0", completion: "0" },
+              },
+              {
+                id: "example/dynamic-route",
+                canonical_slug: "example/dynamic-route",
+                name: "Example: Dynamic Route",
+                context_length: 128_000,
+                created: 1_700_000_000,
+                expiration_date: null,
+                pricing: { prompt: "0", completion: "0" },
+              },
+              {
+                id: "openrouter/free",
+                canonical_slug: "openrouter/free",
+                name: "OpenRouter: Free Models Router",
+                context_length: 128_000,
+                created: 1_700_000_000,
+                expiration_date: null,
+                pricing: { prompt: "0", completion: "0" },
+              },
             ],
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
@@ -79,6 +106,10 @@ describe("OpenRouter models", () => {
 
     const models = await fetchOpenRouterModels(true);
 
-    expect(models.map((model) => model.id)).toEqual(["example/model"]);
+    expect(models.map((model) => model.id)).toEqual([
+      "example/model",
+      "example/model:batch",
+      "example/model:free",
+    ]);
   });
 });

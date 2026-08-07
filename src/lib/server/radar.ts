@@ -62,7 +62,9 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
     const inputPrice = Number(model.pricing.prompt) * MILLION;
     const outputPrice = Number(model.pricing.completion) * MILLION;
     const blendedPrice = calculateBlendedPrice(inputPrice, outputPrice);
-    const isCheap = blendedPrice <= cheapThreshold;
+    const isFree = model.id.endsWith(":free");
+    const isBatch = model.id.endsWith(":batch");
+    const isCheap = !isFree && !isBatch && blendedPrice <= cheapThreshold;
     const benchmarks = model.benchmarks?.artificial_analysis;
 
     return {
@@ -85,14 +87,17 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       coding: finiteScore(benchmarks?.coding_index),
       agentic: finiteScore(benchmarks?.agentic_index),
       intelligenceRank: null,
-      segment: isCheap ? "cheap" : "standard",
+      segment: isFree ? "free" : isBatch ? "batch" : isCheap ? "cheap" : "standard",
       isCheap,
       isStateOfTheArt: false,
       valueScore: null,
     };
   });
 
-  const rankedModels = models
+  const paidModels = models.filter(
+    (model) => model.segment !== "free" && model.segment !== "batch",
+  );
+  const rankedModels = paidModels
     .filter((model): model is RadarModel & { intelligence: number } => model.intelligence !== null)
     .sort((left, right) => right.intelligence - left.intelligence);
 
@@ -145,13 +150,13 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
     };
   }
 
-  addValueScores(models);
+  addValueScores(paidModels);
   models.sort((left, right) => {
     if (left.intelligenceRank === null) return 1;
     if (right.intelligenceRank === null) return -1;
     return left.intelligenceRank - right.intelligenceRank;
   });
-  const modelPriceDirections = models.map((model) => {
+  const modelPriceDirections = paidModels.map((model) => {
     const changes = [model.inputPriceChangePercent, model.outputPriceChangePercent].filter(
       (change): change is number => change !== null && Math.abs(change) >= 0.001,
     );
@@ -169,7 +174,9 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
     snapshotDate,
     models,
     summary: {
-      paidModels: models.length,
+      paidModels: paidModels.length,
+      freeModels: models.filter((model) => model.segment === "free").length,
+      batchModels: models.filter((model) => model.segment === "batch").length,
       rankedModels: rankedCount,
       cheapModels: models.filter((model) => model.isCheap).length,
       stateOfTheArtModels: models.filter((model) => model.isStateOfTheArt).length,
@@ -186,7 +193,7 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       openRouter: {
         state: "live",
         label: "Pricing live",
-        detail: "Current paid model prices from OpenRouter.",
+        detail: "Current model prices from OpenRouter.",
       },
       benchmarks:
         rankedCount > 0
@@ -228,6 +235,8 @@ export function unavailableRadarData(): RadarData {
     models: [],
     summary: {
       paidModels: 0,
+      freeModels: 0,
+      batchModels: 0,
       rankedModels: 0,
       cheapModels: 0,
       stateOfTheArtModels: 0,

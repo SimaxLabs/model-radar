@@ -30,6 +30,8 @@
   function segmentLabel(segment: ModelSegment) {
     if (segment === "state-of-the-art") return "Frontier";
     if (segment === "cheap") return "Cheap";
+    if (segment === "free") return "Free";
+    if (segment === "batch") return "Batch";
     return "Standard";
   }
 </script>
@@ -87,7 +89,7 @@
       <div><dt>Intelligence index</dt><dd>{model.intelligence ?? "Not available"}</dd></div>
       <div><dt>Coding index</dt><dd>{model.coding ?? "-"}</dd></div>
       <div><dt>Agentic index</dt><dd>{model.agentic ?? "-"}</dd></div>
-      <div><dt>Paid-model rank</dt><dd>{model.intelligenceRank ? `#${model.intelligenceRank}` : "-"}</dd></div>
+      <div><dt>On-demand rank</dt><dd>{model.intelligenceRank ? `#${model.intelligenceRank}` : "-"}</dd></div>
     </dl>
   </section>
 

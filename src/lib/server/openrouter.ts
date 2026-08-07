@@ -43,14 +43,13 @@ async function requestModels() {
   const models = payload.data.filter(isValidModel).filter((model) => {
     const inputPrice = Number(model.pricing.prompt);
     const outputPrice = Number(model.pricing.completion);
+    const isFreeVariant = model.id.endsWith(":free");
     return (
-      !model.id.endsWith(":free") &&
-      !model.id.endsWith(":batch") &&
       model.id !== "openrouter/free" &&
       Number.isFinite(inputPrice) &&
       Number.isFinite(outputPrice) &&
-      inputPrice > 0 &&
-      outputPrice > 0
+      ((isFreeVariant && inputPrice === 0 && outputPrice === 0) ||
+        (!isFreeVariant && inputPrice > 0 && outputPrice > 0))
     );
   });
 

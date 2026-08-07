@@ -32,7 +32,7 @@
   import type { RadarData, RadarModel } from "$lib/types";
   import type { PageData } from "./$types";
 
-  type Filter = "all" | "cheap" | "changed";
+  type Filter = "all" | "cheap" | "changed" | "free" | "batch";
   type Sort = "changed" | "intelligence" | "input" | "output" | "monthly";
   type SortDirection = "asc" | "desc";
   const RECOMMENDATION_COUNT = 5;
@@ -71,6 +71,9 @@
       .map((modelId) => radar.models.find((model) => model.id === modelId))
       .filter((model): model is RadarModel => model !== undefined),
   );
+  let onDemandModels = $derived(
+    radar.models.filter((model) => model.segment !== "free" && model.segment !== "batch"),
+  );
   let recentArticleCount = $derived.by(() => {
     const cutoffDate = new Date(
       Date.parse(`${radar.snapshotDate}T00:00:00Z`) - 24 * 60 * 60 * 1000,
@@ -80,7 +83,7 @@
     ).length;
   });
   let topQuality = $derived(
-    radar.models.filter((model) => model.intelligence !== null).sort(
+    onDemandModels.filter((model) => model.intelligence !== null).sort(
       (left, right) =>
         (left.intelligenceRank ?? Infinity) -
         (right.intelligenceRank ?? Infinity),
@@ -95,7 +98,7 @@
     let drops = 0;
     let mixed = 0;
 
-    for (const model of radar.models) {
+    for (const model of onDemandModels) {
       if (!model.priceChangeRecordedAt || Date.parse(model.priceChangeRecordedAt) < cutoff) continue;
       const changes = [model.inputPriceChangePercent, model.outputPriceChangePercent].filter(
         (change): change is number => change !== null && Math.abs(change) >= 0.001,
@@ -120,8 +123,12 @@
     const query = search.trim().toLowerCase();
     return radar.models
       .filter((model) => {
+        const isSpecialVariant = model.segment === "free" || model.segment === "batch";
+        if (filter === "all" && isSpecialVariant) return false;
         if (filter === "cheap" && !model.isCheap) return false;
-        if (filter === "changed" && !hasPriceChange(model)) return false;
+        if (filter === "changed" && (isSpecialVariant || !hasPriceChange(model))) return false;
+        if (filter === "free" && model.segment !== "free") return false;
+        if (filter === "batch" && model.segment !== "batch") return false;
         return !query || `${model.name} ${model.provider} ${model.id}`.toLowerCase().includes(query);
       })
       .sort((left, right) => {
@@ -240,7 +247,7 @@
 <svelte:head>
   <title>Model Radar</title>
   <link rel="icon" type="image/svg+xml" href={`${base}/model-radar.svg`} />
-  <meta name="description" content="Track paid OpenRouter model prices and compare them with independent Artificial Analysis intelligence benchmarks." />
+  <meta name="description" content="Track OpenRouter model prices and compare them with independent Artificial Analysis intelligence benchmarks." />
 </svelte:head>
 
 <div class="app-shell">
@@ -311,9 +318,9 @@
 
       <section class="metrics-grid" aria-label="Radar summary">
         <article class="metric-card metric-models">
-          <div class="metric-card-top"><span>Paid models</span><Database size={16} /></div>
+          <div class="metric-card-top"><span>On-demand models</span><Database size={16} /></div>
           <div class="metric-value"><strong>{radar.summary.paidModels}</strong><span>routes</span></div>
-          <p>{radar.summary.rankedModels} ranked by Artificial Analysis; free/dynamic routes excluded</p>
+          <p>{radar.summary.rankedModels} ranked by Artificial Analysis; free and batch routes separated</p>
         </article>
         <a class="metric-card metric-card-link metric-budget" href="#models" onclick={() => { activeSection = "models"; selectFilter("cheap"); }}>
           <div class="metric-card-top"><span>Budget models</span><Wallet size={16} /></div>
@@ -385,6 +392,8 @@
           <button class:active={filter === "all"} aria-pressed={filter === "all"} onclick={() => selectFilter("all")}>All paid <span>{radar.summary.paidModels}</span></button>
           <button class:active={filter === "cheap"} aria-pressed={filter === "cheap"} onclick={() => selectFilter("cheap")}>Budget <span>{radar.summary.cheapModels}</span></button>
           <button class:active={filter === "changed"} aria-pressed={filter === "changed"} onclick={() => selectFilter("changed")}>Price changed <span>{radar.summary.priceChangedModels}</span></button>
+          <button class:active={filter === "free"} aria-pressed={filter === "free"} onclick={() => selectFilter("free")}>Free <span>{radar.summary.freeModels}</span></button>
+          <button class:active={filter === "batch"} aria-pressed={filter === "batch"} onclick={() => selectFilter("batch")}>Batch <span>{radar.summary.batchModels}</span></button>
         </div>
 
         <div class="table-wrap" bind:this={modelTable}>

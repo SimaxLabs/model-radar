@@ -34,7 +34,7 @@ export interface OpenRouterModel {
   };
 }
 
-export type ModelSegment = "state-of-the-art" | "cheap" | "standard";
+export type ModelSegment = "state-of-the-art" | "cheap" | "standard" | "free" | "batch";
 
 export interface RadarModel {
   id: string;
@@ -64,6 +64,8 @@ export interface RadarModel {
 
 export interface RadarSummary {
   paidModels: number;
+  freeModels: number;
+  batchModels: number;
   rankedModels: number;
   cheapModels: number;
   stateOfTheArtModels: number;
