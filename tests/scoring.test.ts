@@ -21,6 +21,7 @@ function radarModel(
     previousInputPrice: null,
     previousOutputPrice: null,
     priceChangeBaselineAt: null,
+    priceChangeRecordedAt: null,
     inputPriceChangePercent: null,
     outputPriceChangePercent: null,
     intelligence,

@@ -1,5 +1,5 @@
 import type { Client, InStatement } from "@libsql/client";
-import { PRICE_CHANGE_RETENTION_DAYS } from "$lib/types";
+import { PRICE_HISTORY_RETENTION_DAYS } from "$lib/types";
 import { getDatabase } from "$lib/server/db/client";
 import { syncRuns } from "$lib/server/db/schema";
 
@@ -106,7 +106,7 @@ export async function syncPriceHistory(
   const capturedOn = capturedAt.toISOString().slice(0, 10);
   const capturedAtIso = capturedAt.toISOString();
   const cutoff = new Date(
-    capturedAt.getTime() - PRICE_CHANGE_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+    capturedAt.getTime() - PRICE_HISTORY_RETENTION_DAYS * 24 * 60 * 60 * 1000,
   );
   const cutoffAtIso = cutoff.toISOString();
   const cutoffOn = cutoffAtIso.slice(0, 10);

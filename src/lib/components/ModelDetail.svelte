@@ -76,7 +76,7 @@
       <div><dt>Output movement</dt><dd><PriceChange value={model.outputPriceChangePercent} /></dd></div>
       {#if model.previousInputPrice !== null && model.previousOutputPrice !== null}
         <div><dt>Original output / 1M</dt><dd>{formatPrice(model.previousOutputPrice)}</dd></div>
-        <div><dt>Baseline recorded</dt><dd>{model.priceChangeBaselineAt ? formatSyncTime(model.priceChangeBaselineAt) : "Unavailable"}</dd></div>
+        <div><dt>Price move recorded</dt><dd>{model.priceChangeRecordedAt ? formatSyncTime(model.priceChangeRecordedAt) : "Unavailable"}</dd></div>
       {/if}
     </dl>
   </section>

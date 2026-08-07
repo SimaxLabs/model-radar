@@ -29,7 +29,7 @@
   import SourcePill from "$lib/components/SourcePill.svelte";
   import { formatPrice, formatSyncTime, money } from "$lib/format";
   import { rankBudgetModels } from "$lib/scoring";
-  import { PRICE_CHANGE_RETENTION_DAYS, type RadarData, type RadarModel } from "$lib/types";
+  import type { RadarData, RadarModel } from "$lib/types";
   import type { PageData } from "./$types";
 
   type Filter = "all" | "cheap" | "changed";
@@ -89,6 +89,26 @@
   let topBudget = $derived(
     rankBudgetModels(radar.models).slice(0, RECOMMENDATION_COUNT),
   );
+  let recentPriceMovements = $derived.by(() => {
+    const cutoff = Date.parse(radar.generatedAt) - 24 * 60 * 60 * 1000;
+    let increases = 0;
+    let drops = 0;
+    let mixed = 0;
+
+    for (const model of radar.models) {
+      if (!model.priceChangeRecordedAt || Date.parse(model.priceChangeRecordedAt) < cutoff) continue;
+      const changes = [model.inputPriceChangePercent, model.outputPriceChangePercent].filter(
+        (change): change is number => change !== null && Math.abs(change) >= 0.001,
+      );
+      const increased = changes.some((change) => change > 0);
+      const dropped = changes.some((change) => change < 0);
+      if (increased && dropped) mixed += 1;
+      else if (increased) increases += 1;
+      else if (dropped) drops += 1;
+    }
+
+    return { models: increases + drops + mixed, increases, drops, mixed };
+  });
 
   function hasPriceChange(model: RadarModel) {
     return [model.inputPriceChangePercent, model.outputPriceChangePercent].some(
@@ -171,10 +191,10 @@
   function priceMoveDetail(model: RadarModel, rate: "input" | "output") {
     const originalPrice = rate === "input" ? model.previousInputPrice : model.previousOutputPrice;
     if (originalPrice === null) return undefined;
-    const recordedAt = model.priceChangeBaselineAt
-      ? formatSyncTime(model.priceChangeBaselineAt)
+    const recordedAt = model.priceChangeRecordedAt
+      ? formatSyncTime(model.priceChangeRecordedAt)
       : "Unavailable";
-    return `Original ${rate} price: ${formatPrice(originalPrice)} / 1M tokens\nRecorded: ${recordedAt}`;
+    return `Original ${rate} price: ${formatPrice(originalPrice)} / 1M tokens\nPrice move recorded: ${recordedAt}`;
   }
 
   function clearComparison() {
@@ -296,8 +316,8 @@
         </a>
         <a class="metric-card metric-card-link metric-moves" href="#models" onclick={() => { activeSection = "models"; selectFilter("changed"); }}>
           <div class="metric-card-top"><span>Price movement</span><Activity size={16} /></div>
-          <div class="metric-value"><strong>{radar.summary.priceChangedModels}</strong><span>models</span></div>
-          <p><span class="move-down">{radar.summary.priceDrops} down</span><span class="move-up">{radar.summary.priceIncreases} up</span><span class="move-mixed">{radar.summary.priceMixed} mixed</span><span class="movement-refresh">{PRICE_CHANGE_RETENTION_DAYS}d retention / 1h refresh</span></p>
+          <div class="metric-value"><strong>{recentPriceMovements.models}</strong><span>models</span></div>
+          <p><span class="move-down">{recentPriceMovements.drops} down</span><span class="move-up">{recentPriceMovements.increases} up</span><span class="move-mixed">{recentPriceMovements.mixed} mixed</span><span class="movement-refresh">Past 24h / 1h refresh</span></p>
         </a>
       </section>
 

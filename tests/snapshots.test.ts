@@ -13,7 +13,7 @@ beforeAll(async () => {
 });
 
 describe("price movement retention", () => {
-  it("tracks cumulative changes immediately and expires unchanged data after 30 days", async () => {
+  it("tracks cumulative changes immediately and expires unchanged data after 15 days", async () => {
     const model = {
       modelId: "example/model",
       inputPrice: 1,
@@ -44,7 +44,7 @@ describe("price movement retention", () => {
 
     const secondChange = await snapshots.syncPriceHistory(
       [{ ...model, inputPrice: 0.7, outputPrice: 1.7, blendedPrice: 0.95 }],
-      new Date("2026-06-20T00:00:00Z"),
+      new Date("2026-06-10T00:00:00Z"),
       1,
     );
     expect(secondChange.get(model.modelId)).toEqual({
@@ -53,19 +53,19 @@ describe("price movement retention", () => {
       baselineCapturedAt: "2026-06-01T00:00:00.000Z",
       currentInputPrice: 0.7,
       currentOutputPrice: 1.7,
-      changedAt: "2026-06-20T00:00:00.000Z",
+      changedAt: "2026-06-10T00:00:00.000Z",
     });
 
     const retained = await snapshots.syncPriceHistory(
       [{ ...model, inputPrice: 0.7, outputPrice: 1.7, blendedPrice: 0.95 }],
-      new Date("2026-07-10T00:00:00Z"),
+      new Date("2026-06-24T00:00:00Z"),
       1,
     );
     expect(retained.get(model.modelId)?.baselineInputPrice).toBe(1);
 
     const expired = await snapshots.syncPriceHistory(
       [{ ...model, inputPrice: 0.7, outputPrice: 1.7, blendedPrice: 0.95 }],
-      new Date("2026-07-21T00:00:00Z"),
+      new Date("2026-06-26T00:00:00Z"),
       1,
     );
     expect(expired.size).toBe(0);
@@ -77,8 +77,8 @@ describe("price movement retention", () => {
     );
     expect(movementRows.rows).toHaveLength(0);
     expect(snapshotRows.rows.map((row) => String(row.captured_on))).toEqual([
-      "2026-07-10",
-      "2026-07-21",
+      "2026-06-24",
+      "2026-06-26",
     ]);
   });
 });

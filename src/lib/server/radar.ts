@@ -78,6 +78,7 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       previousInputPrice: null,
       previousOutputPrice: null,
       priceChangeBaselineAt: null,
+      priceChangeRecordedAt: null,
       inputPriceChangePercent: null,
       outputPriceChangePercent: null,
       intelligence: finiteScore(benchmarks?.intelligence_index),
@@ -123,6 +124,7 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       model.previousInputPrice = baselineInputPrice;
       model.previousOutputPrice = baselineOutputPrice;
       model.priceChangeBaselineAt = movement?.baselineCapturedAt ?? null;
+      model.priceChangeRecordedAt = movement?.changedAt ?? null;
       model.inputPriceChangePercent = calculatePriceChange(model.inputPrice, baselineInputPrice);
       model.outputPriceChangePercent = calculatePriceChange(model.outputPrice, baselineOutputPrice);
     }
@@ -131,8 +133,8 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       label: databaseKind === "turso" ? "Turso connected" : "Local history",
       detail:
         databaseKind === "turso"
-          ? "Price movements and 30 days of daily prices are persisted in Turso."
-          : "Price movements and 30 days of daily prices are persisted in local libSQL.",
+          ? "Price movements and daily prices are retained for 15 days in Turso."
+          : "Price movements and daily prices are retained for 15 days in local libSQL.",
     };
   } catch (error) {
     console.error("Price history sync failed", error);

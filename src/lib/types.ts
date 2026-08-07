@@ -1,6 +1,6 @@
 export type SourceState = "live" | "unavailable";
 
-export const PRICE_CHANGE_RETENTION_DAYS = 30;
+export const PRICE_HISTORY_RETENTION_DAYS = 15;
 
 export interface SourceStatus {
   state: SourceState;
@@ -49,6 +49,7 @@ export interface RadarModel {
   previousInputPrice: number | null;
   previousOutputPrice: number | null;
   priceChangeBaselineAt: string | null;
+  priceChangeRecordedAt: string | null;
   inputPriceChangePercent: number | null;
   outputPriceChangePercent: number | null;
   intelligence: number | null;
