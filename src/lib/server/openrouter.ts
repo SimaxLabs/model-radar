@@ -45,6 +45,7 @@ async function requestModels() {
     const outputPrice = Number(model.pricing.completion);
     return (
       !model.id.endsWith(":free") &&
+      !model.id.endsWith(":batch") &&
       model.id !== "openrouter/free" &&
       Number.isFinite(inputPrice) &&
       Number.isFinite(outputPrice) &&

@@ -44,4 +44,41 @@ describe("OpenRouter models", () => {
       agentic_index: 61.5,
     });
   });
+
+  it("excludes batch model variants", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            data: [
+              {
+                id: "example/model",
+                canonical_slug: "example/model-2026-01-01",
+                name: "Example: Model",
+                context_length: 128_000,
+                created: 1_700_000_000,
+                expiration_date: null,
+                pricing: { prompt: "0.000002", completion: "0.00001" },
+              },
+              {
+                id: "example/model:batch",
+                canonical_slug: "example/model-2026-01-01",
+                name: "Example: Model (batch)",
+                context_length: 128_000,
+                created: 1_700_000_000,
+                expiration_date: null,
+                pricing: { prompt: "0.000001", completion: "0.000005" },
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+
+    const models = await fetchOpenRouterModels(true);
+
+    expect(models.map((model) => model.id)).toEqual(["example/model"]);
+  });
 });
