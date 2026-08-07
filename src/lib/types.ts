@@ -25,6 +25,9 @@ export interface OpenRouterModel {
     prompt: string;
     completion: string;
   };
+  top_provider?: {
+    max_completion_tokens: number | null;
+  };
   benchmarks?: {
     artificial_analysis?: {
       intelligence_index: number | null;
@@ -41,6 +44,7 @@ export interface RadarModel {
   name: string;
   provider: string;
   contextLength: number;
+  maxCompletionTokens: number | null;
   createdAt: string;
   expiresAt: string | null;
   inputPrice: number;

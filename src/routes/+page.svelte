@@ -39,6 +39,10 @@
   const COMPARISON_MIN = 2;
   const COMPARISON_LIMIT = 4;
   const PAGE_SIZE = 25;
+  const tokenLimit = new Intl.NumberFormat("en", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  });
   const articleDate = new Intl.DateTimeFormat("en", {
     month: "short",
     day: "numeric",
@@ -119,6 +123,10 @@
     );
   }
 
+  function formatTokenLimit(value: number | null) {
+    return value === null ? "Not published" : tokenLimit.format(value);
+  }
+
   let matchingModels = $derived.by(() => {
     const query = search.trim().toLowerCase();
     return radar.models
@@ -166,6 +174,9 @@
     filter = nextFilter;
     if (nextFilter === "changed") {
       sort = "changed";
+      sortDirection = "desc";
+    } else if (nextFilter === "free") {
+      sort = "intelligence";
       sortDirection = "desc";
     } else if (wasShowingChanges && sort === "changed") {
       sort = "intelligence";
@@ -395,13 +406,23 @@
           <button class:active={filter === "free"} aria-pressed={filter === "free"} onclick={() => selectFilter("free")}>Free <span>{radar.summary.freeModels}</span></button>
           <button class:active={filter === "batch"} aria-pressed={filter === "batch"} onclick={() => selectFilter("batch")}>Batch <span>{radar.summary.batchModels}</span></button>
         </div>
+        {#if filter === "free"}
+          <div class="free-limit-note" role="note">
+            <strong>Shared OpenRouter free quota</strong>
+            <span>20 requests per minute across all free models. The daily allowance is 50 requests, or 1,000 after at least $10 in lifetime credit purchases.</span>
+          </div>
+        {/if}
 
         <div class="table-wrap" bind:this={modelTable}>
           <table>
             <thead>
               <tr>
                 <th class="model-col">Model</th>
-                <th class="rank-col">AA rank</th>
+                {#if filter === "free"}
+                  <th class="limit-col">Context window</th>
+                {:else}
+                  <th class="rank-col">AA rank</th>
+                {/if}
                 <th class="intelligence-col sortable-column" aria-sort={sort === "intelligence" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
                   <button type="button" onclick={() => toggleSort("intelligence")}>
                     Intelligence
@@ -412,26 +433,31 @@
                     {/if}
                   </button>
                 </th>
-                <th class="input-col sortable-column" aria-sort={sort === "input" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
-                  <button type="button" onclick={() => toggleSort("input")}>
-                    Input / 1M
-                    {#if sort === "input"}
-                      {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
-                    {:else}
-                      <ArrowUpDown size={13} />
-                    {/if}
-                  </button>
-                </th>
-                <th class="output-col sortable-column" aria-sort={sort === "output" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
-                  <button type="button" onclick={() => toggleSort("output")}>
-                    Output / 1M
-                    {#if sort === "output"}
-                      {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
-                    {:else}
-                      <ArrowUpDown size={13} />
-                    {/if}
-                  </button>
-                </th>
+                {#if filter === "free"}
+                  <th class="limit-col">Max output</th>
+                  <th class="limit-col">Requests / min</th>
+                {:else}
+                  <th class="input-col sortable-column" aria-sort={sort === "input" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
+                    <button type="button" onclick={() => toggleSort("input")}>
+                      Input / 1M
+                      {#if sort === "input"}
+                        {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
+                      {:else}
+                        <ArrowUpDown size={13} />
+                      {/if}
+                    </button>
+                  </th>
+                  <th class="output-col sortable-column" aria-sort={sort === "output" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
+                    <button type="button" onclick={() => toggleSort("output")}>
+                      Output / 1M
+                      {#if sort === "output"}
+                        {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
+                      {:else}
+                        <ArrowUpDown size={13} />
+                      {/if}
+                    </button>
+                  </th>
+                {/if}
                 {#if filter === "changed"}
                   <th class="movement-col sortable-column" aria-sort={sort === "changed" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
                     <button type="button" onclick={() => toggleSort("changed")}>
@@ -444,16 +470,20 @@
                     </button>
                   </th>
                 {/if}
-                <th class="monthly-col sortable-column" aria-sort={sort === "monthly" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
-                  <button type="button" onclick={() => toggleSort("monthly")}>
-                    Monthly est.
-                    {#if sort === "monthly"}
-                      {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
-                    {:else}
-                      <ArrowUpDown size={13} />
-                    {/if}
-                  </button>
-                </th>
+                {#if filter === "free"}
+                  <th class="limit-col">Requests / day</th>
+                {:else}
+                  <th class="monthly-col sortable-column" aria-sort={sort === "monthly" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
+                    <button type="button" onclick={() => toggleSort("monthly")}>
+                      Monthly est.
+                      {#if sort === "monthly"}
+                        {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
+                      {:else}
+                        <ArrowUpDown size={13} />
+                      {/if}
+                    </button>
+                  </th>
+                {/if}
                 <th class="action-col" aria-label="Model actions"></th>
               </tr>
             </thead>
@@ -463,14 +493,27 @@
                 {@const inComparison = comparisonIds.includes(model.id)}
                 <tr>
                   <td class="model-col"><button class="model-identity" onclick={() => selectedModel = model}><ProviderLogo provider={model.provider} size="small" /><span><strong>{model.name}</strong></span></button></td>
-                  <td class="rank-col">{model.intelligenceRank ? `#${model.intelligenceRank}` : "-"}</td>
+                  {#if filter === "free"}
+                    <td class="limit-col limit-cell"><strong>{formatTokenLimit(model.contextLength)}</strong><span>tokens</span></td>
+                  {:else}
+                    <td class="rank-col">{model.intelligenceRank ? `#${model.intelligenceRank}` : "-"}</td>
+                  {/if}
                   <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></td>
-                  <td class="input-col"><span class="price-with-move"><span>{formatPrice(model.inputPrice)}</span>{#if model.inputPriceChangePercent !== null && Math.abs(model.inputPriceChangePercent) >= 0.001}<PriceChange value={model.inputPriceChangePercent} detail={priceMoveDetail(model, "input")} />{/if}</span></td>
-                  <td class="output-col"><span class="price-with-move"><span>{formatPrice(model.outputPrice)}</span>{#if model.outputPriceChangePercent !== null && Math.abs(model.outputPriceChangePercent) >= 0.001}<PriceChange value={model.outputPriceChangePercent} detail={priceMoveDetail(model, "output")} />{/if}</span></td>
+                  {#if filter === "free"}
+                    <td class="limit-col limit-cell"><strong>{formatTokenLimit(model.maxCompletionTokens)}</strong>{#if model.maxCompletionTokens !== null}<span>tokens</span>{/if}</td>
+                    <td class="limit-col limit-cell"><strong>20</strong><span>shared</span></td>
+                  {:else}
+                    <td class="input-col"><span class="price-with-move"><span>{formatPrice(model.inputPrice)}</span>{#if model.inputPriceChangePercent !== null && Math.abs(model.inputPriceChangePercent) >= 0.001}<PriceChange value={model.inputPriceChangePercent} detail={priceMoveDetail(model, "input")} />{/if}</span></td>
+                    <td class="output-col"><span class="price-with-move"><span>{formatPrice(model.outputPrice)}</span>{#if model.outputPriceChangePercent !== null && Math.abs(model.outputPriceChangePercent) >= 0.001}<PriceChange value={model.outputPriceChangePercent} detail={priceMoveDetail(model, "output")} />{/if}</span></td>
+                  {/if}
                   {#if filter === "changed"}
                     <td class="movement-col">{model.priceChangeRecordedAt ? formatSyncTime(model.priceChangeRecordedAt) : "Unavailable"}</td>
                   {/if}
-                  <td class="monthly-col"><strong>{money.format(monthlyCost)}</strong></td>
+                  {#if filter === "free"}
+                    <td class="limit-col limit-cell"><strong>50 / 1,000</strong><span>shared</span></td>
+                  {:else}
+                    <td class="monthly-col"><strong>{money.format(monthlyCost)}</strong></td>
+                  {/if}
                   <td class="action-col">
                     <div class="row-actions">
                       <button
