@@ -33,7 +33,7 @@
   import type { PageData } from "./$types";
 
   type Filter = "all" | "cheap" | "changed";
-  type Sort = "intelligence" | "input" | "output" | "monthly";
+  type Sort = "changed" | "intelligence" | "input" | "output" | "monthly";
   type SortDirection = "asc" | "desc";
   const RECOMMENDATION_COUNT = 5;
   const COMPARISON_MIN = 2;
@@ -127,7 +127,10 @@
       .sort((left, right) => {
         let leftValue: number | null;
         let rightValue: number | null;
-        if (sort === "intelligence") {
+        if (sort === "changed") {
+          leftValue = left.priceChangeRecordedAt ? Date.parse(left.priceChangeRecordedAt) : null;
+          rightValue = right.priceChangeRecordedAt ? Date.parse(right.priceChangeRecordedAt) : null;
+        } else if (sort === "intelligence") {
           leftValue = left.intelligence;
           rightValue = right.intelligence;
         } else if (sort === "input") {
@@ -152,12 +155,20 @@
   );
 
   function selectFilter(nextFilter: Filter) {
+    const wasShowingChanges = filter === "changed";
     filter = nextFilter;
+    if (nextFilter === "changed") {
+      sort = "changed";
+      sortDirection = "desc";
+    } else if (wasShowingChanges && sort === "changed") {
+      sort = "intelligence";
+      sortDirection = "desc";
+    }
     pageNumber = 1;
   }
 
   function defaultSortDirection(nextSort: Sort): SortDirection {
-    return nextSort === "intelligence" ? "desc" : "asc";
+    return nextSort === "changed" || nextSort === "intelligence" ? "desc" : "asc";
   }
 
   function toggleSort(nextSort: Sort) {
@@ -412,6 +423,18 @@
                     {/if}
                   </button>
                 </th>
+                {#if filter === "changed"}
+                  <th class="movement-col sortable-column" aria-sort={sort === "changed" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
+                    <button type="button" onclick={() => toggleSort("changed")}>
+                      Price move recorded
+                      {#if sort === "changed"}
+                        {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
+                      {:else}
+                        <ArrowUpDown size={13} />
+                      {/if}
+                    </button>
+                  </th>
+                {/if}
                 <th class="monthly-col sortable-column" aria-sort={sort === "monthly" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
                   <button type="button" onclick={() => toggleSort("monthly")}>
                     Monthly est.
@@ -435,6 +458,9 @@
                   <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></td>
                   <td class="input-col"><span class="price-with-move"><span>{formatPrice(model.inputPrice)}</span>{#if model.inputPriceChangePercent !== null && Math.abs(model.inputPriceChangePercent) >= 0.001}<PriceChange value={model.inputPriceChangePercent} detail={priceMoveDetail(model, "input")} />{/if}</span></td>
                   <td class="output-col"><span class="price-with-move"><span>{formatPrice(model.outputPrice)}</span>{#if model.outputPriceChangePercent !== null && Math.abs(model.outputPriceChangePercent) >= 0.001}<PriceChange value={model.outputPriceChangePercent} detail={priceMoveDetail(model, "output")} />{/if}</span></td>
+                  {#if filter === "changed"}
+                    <td class="movement-col">{model.priceChangeRecordedAt ? formatSyncTime(model.priceChangeRecordedAt) : "Unavailable"}</td>
+                  {/if}
                   <td class="monthly-col"><strong>{money.format(monthlyCost)}</strong></td>
                   <td class="action-col">
                     <div class="row-actions">

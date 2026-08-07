@@ -1224,6 +1224,7 @@ tbody tr:hover td {
 .intelligence-col { min-width: 92px; }
 .input-col,
 .output-col { min-width: 142px; }
+.movement-col { min-width: 175px; }
 .monthly-col { min-width: 96px; }
 .action-col { width: 80px; }
 
