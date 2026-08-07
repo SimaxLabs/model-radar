@@ -1135,6 +1135,30 @@ a {
   color: var(--orange-bright);
 }
 
+.global-search-label {
+  height: 33px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid #4a4f58;
+  border-radius: 3px;
+  background: #2a2e34;
+  color: var(--text-strong);
+  font-size: 13px;
+}
+
+.global-search-label b {
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: rgba(255, 120, 10, 0.16);
+  color: var(--orange-bright);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 400;
+}
+
 .free-limit-note {
   display: flex;
   flex-wrap: wrap;

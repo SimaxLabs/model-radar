@@ -32,7 +32,7 @@
   import type { RadarData, RadarModel } from "$lib/types";
   import type { PageData } from "./$types";
 
-  type Filter = "all" | "cheap" | "changed" | "free" | "batch";
+  type Filter = "all" | "cheap" | "changed" | "free" | "batch" | "search";
   type Sort = "changed" | "intelligence" | "input" | "output" | "monthly";
   type SortDirection = "asc" | "desc";
   const RECOMMENDATION_COUNT = 5;
@@ -168,6 +168,19 @@
   let pageModels = $derived(
     matchingModels.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
   );
+
+  function searchAllModels() {
+    pageNumber = 1;
+    if (search.trim()) {
+      filter = "search";
+      if (sort === "changed") {
+        sort = "intelligence";
+        sortDirection = "desc";
+      }
+    } else if (filter === "search") {
+      filter = "all";
+    }
+  }
 
   function selectFilter(nextFilter: Filter) {
     const wasShowingChanges = filter === "changed";
@@ -396,10 +409,13 @@
             <div class="section-title-copy"><h2>Models</h2><p>{matchingModels.length} in view</p></div>
           </div>
           <div class="model-tools">
-            <label class="search-box"><Search size={16} /><input bind:value={search} oninput={() => pageNumber = 1} placeholder="Search all models" aria-label="Search all models" /></label>
+            <label class="search-box"><Search size={16} /><input bind:value={search} oninput={searchAllModels} placeholder="Search every category" aria-label="Search every model category" /></label>
           </div>
         </div>
         <div class="filter-row" aria-label="Model filters">
+          {#if filter === "search"}
+            <span class="global-search-label">Search results <b>{matchingModels.length}</b></span>
+          {/if}
           <button class:active={filter === "all"} aria-pressed={filter === "all"} onclick={() => selectFilter("all")}>All paid <span>{radar.summary.paidModels}</span></button>
           <button class:active={filter === "cheap"} aria-pressed={filter === "cheap"} onclick={() => selectFilter("cheap")}>Budget <span>{radar.summary.cheapModels}</span></button>
           <button class:active={filter === "free"} aria-pressed={filter === "free"} onclick={() => selectFilter("free")}>Free <span>{radar.summary.freeModels}</span></button>
