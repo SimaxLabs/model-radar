@@ -365,8 +365,8 @@
 
       <section class="dashboard-section recommendations-section" aria-label="Top model recommendations">
         <div class="recommendation-grid">
-          <RecommendationCard eyebrow="BEST CAPABILITY" method="Paid OpenRouter models with an AA Index are sorted from highest to lowest. The five highest-ranked models are shown." models={topQuality} tone="ink" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
-          <RecommendationCard eyebrow="BEST UNDER BUDGET" method={`Paid models at or below ${money.format(radar.summary.cheapThreshold)} blended per 1M tokens are scored within the cheap set: 50% normalized AA Index and 50% log-price affordability. The five highest scores are shown.`} models={topBudget} tone="lime" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} />
+          <RecommendationCard eyebrow="BEST CAPABILITY" method="Paid OpenRouter models with an AA Index are sorted from highest to lowest. The five highest-ranked models are shown." models={topQuality} tone="ink" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} onselect={(model) => selectedModel = model} />
+          <RecommendationCard eyebrow="BEST UNDER BUDGET" method={`Paid models at or below ${money.format(radar.summary.cheapThreshold)} blended per 1M tokens are scored within the cheap set: 50% normalized AA Index and 50% log-price affordability. The five highest scores are shown.`} models={topBudget} tone="lime" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} onselect={(model) => selectedModel = model} />
         </div>
       </section>
 

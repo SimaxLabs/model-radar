@@ -11,6 +11,7 @@
     tone,
     inputMillions,
     outputMillions,
+    onselect,
   }: {
     eyebrow: string;
     method: string;
@@ -18,6 +19,7 @@
     tone: "ink" | "lime";
     inputMillions: number;
     outputMillions: number;
+    onselect: (model: RadarModel) => void;
   } = $props();
 </script>
 
@@ -54,7 +56,7 @@
               <td>
                 <div class="recommendation-heading">
                   <ProviderLogo provider={model.provider} />
-                  <h3 title={model.name}>{model.name}</h3>
+                  <h3 title={model.name}><button type="button" onclick={() => onselect(model)}>{model.name}</button></h3>
                 </div>
               </td>
               <td>{model.intelligence ?? "-"}</td>
