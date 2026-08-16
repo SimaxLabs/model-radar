@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ExternalLink } from "@lucide/svelte";
+  import { ExternalLink, X } from "@lucide/svelte";
   import { formatPrice, formatSyncTime, formatTokenCount, money } from "$lib/format";
   import type { ModelSegment, RadarModel } from "$lib/types";
   import ProviderLogo from "$lib/components/ProviderLogo.svelte";
@@ -43,21 +43,23 @@
   oncancel={(event) => { event.preventDefault(); onclose(); }}
   onclick={(event) => { if (event.target === dialog) onclose(); }}
 >
-  <button class="detail-close" onclick={onclose} aria-label="Close details">
-    <span>Close</span><span aria-hidden="true">x</span>
-  </button>
-  <div class="detail-title">
-    <ProviderLogo provider={model.provider} size="large" />
-    <div><h2>{model.name}</h2></div>
+  <div class="detail-header">
+    <div class="detail-title">
+      <ProviderLogo provider={model.provider} size="large" />
+      <div><h2>{model.name}</h2></div>
+    </div>
+    <button class="detail-close" onclick={onclose} aria-label="Close details"><X size={18} /></button>
   </div>
   <div class="detail-badges">
     <span class={`segment-tag segment-${model.segment}`}>{segmentLabel(model.segment)}</span>
   </div>
 
-  <section class="detail-callout">
-    <span>Estimated monthly cost</span>
-    <strong>{money.format(monthlyCost)}</strong>
-    <p>Based on {inputMillions}M input and {outputMillions}M output tokens.</p>
+  <section class="detail-section">
+    <div class="section-heading compact"><div><span class="section-kicker">WORKLOAD</span><h3>Estimated cost</h3></div></div>
+    <dl class="detail-list detail-estimate-list">
+      <div><dt>Monthly estimate</dt><dd>{money.format(monthlyCost)}</dd></div>
+      <div><dt>Token volume</dt><dd>{inputMillions}M in / {outputMillions}M out</dd></div>
+    </dl>
   </section>
 
   <section class="detail-section">
