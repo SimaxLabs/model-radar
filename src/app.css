@@ -1961,14 +1961,6 @@ footer a:hover {
 
 .comparison-model {
   min-width: 0;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.comparison-model > div {
-  min-width: 0;
 }
 
 .comparison-model strong {
@@ -1982,20 +1974,6 @@ footer a:hover {
   font-size: 15px;
   font-weight: 600;
   line-height: 1.25;
-}
-
-.comparison-model button {
-  width: 23px;
-  height: 23px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  background: transparent;
-  color: var(--faint);
-  cursor: pointer;
 }
 
 .comparison-table thead a {
@@ -2425,7 +2403,6 @@ footer a:hover {
     min-width: 0;
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
     gap: 10px;
     padding: 12px;
     background: #1b1e23;
@@ -2450,20 +2427,6 @@ footer a:hover {
     color: var(--blue);
     font-size: 11px;
     text-decoration: none;
-  }
-
-  .comparison-card-heading button {
-    width: 32px;
-    height: 32px;
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    padding: 0;
-    border: 1px solid var(--border-strong);
-    border-radius: 3px;
-    background: transparent;
-    color: var(--muted);
-    cursor: pointer;
   }
 
   .comparison-card section h3 {

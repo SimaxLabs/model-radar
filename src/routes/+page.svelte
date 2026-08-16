@@ -663,6 +663,6 @@
   {/if}
 
   {#if comparisonOpen && comparisonModels.length >= COMPARISON_MIN}
-    <ModelComparison models={comparisonModels} inputMillions={safeInputMillions} outputMillions={safeOutputMillions} onremove={removeComparison} onclose={() => comparisonOpen = false} />
+    <ModelComparison models={comparisonModels} inputMillions={safeInputMillions} outputMillions={safeOutputMillions} onclose={() => comparisonOpen = false} />
   {/if}
 </div>

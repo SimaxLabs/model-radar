@@ -14,13 +14,11 @@
     models,
     inputMillions,
     outputMillions,
-    onremove,
     onclose,
   }: {
     models: RadarModel[];
     inputMillions: number;
     outputMillions: number;
-    onremove: (modelId: string) => void;
     onclose: () => void;
   } = $props();
 
@@ -138,10 +136,7 @@
           {#each models as model (model.id)}
             <th scope="col">
               <div class="comparison-model">
-                 <div>
-                   <strong title={model.name}>{model.name}</strong>
-                 </div>
-                <button onclick={() => onremove(model.id)} aria-label={`Remove ${model.name} from comparison`}><X size={13} /></button>
+                <strong title={model.name}>{model.name}</strong>
               </div>
               <a href={`https://openrouter.ai/${model.id}`} target="_blank" rel="noreferrer">OpenRouter <ExternalLink size={11} /></a>
             </th>
@@ -174,7 +169,6 @@
               <strong>{model.name}</strong>
               <a href={`https://openrouter.ai/${model.id}`} target="_blank" rel="noreferrer">OpenRouter <ExternalLink size={11} /></a>
             </div>
-            <button onclick={() => onremove(model.id)} aria-label={`Remove ${model.name} from comparison`}><X size={14} /></button>
           </div>
           {#each metricGroups as group (group.label)}
             <section>
