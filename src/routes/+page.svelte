@@ -426,9 +426,14 @@
           <button class:active={filter === "changed"} aria-pressed={filter === "changed"} onclick={() => selectFilter("changed")}>Price changed <span>{radar.summary.priceChangedModels}</span></button>
         </div>
         {#if filter === "free"}
-          <div class="free-limit-note" role="note">
+          <div class="model-filter-note model-filter-note-free" role="note">
             <strong>Shared OpenRouter free quota</strong>
             <span>20 requests per minute across all free models. The daily allowance is 50 requests, or 1,000 after at least $10 in lifetime credit purchases.</span>
+          </div>
+        {:else if filter === "batch"}
+          <div class="model-filter-note model-filter-note-batch" role="note">
+            <strong>Asynchronous OpenRouter batches</strong>
+            <span>Batch models are for text-only workloads that do not need an immediate response. OpenRouter uses a 24-hour completion window and typically charges 50% of standard per-token pricing.</span>
           </div>
         {/if}
 

@@ -1183,23 +1183,37 @@ a {
   font-weight: 400;
 }
 
-.free-limit-note {
+.model-filter-note {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 12px;
   padding: 10px 18px;
   border-bottom: 1px solid var(--border);
-  background: rgba(115, 191, 105, 0.06);
   color: var(--muted);
   font-size: 12px;
   line-height: 1.5;
 }
 
-.free-limit-note strong {
+.model-filter-note strong {
   flex: 0 0 auto;
-  color: #91d989;
   font-weight: 600;
+}
+
+.model-filter-note-free {
+  background: rgba(115, 191, 105, 0.06);
+}
+
+.model-filter-note-free strong {
+  color: #91d989;
+}
+
+.model-filter-note-batch {
+  background: rgba(87, 148, 242, 0.06);
+}
+
+.model-filter-note-batch strong {
+  color: #8ab8ff;
 }
 
 .table-wrap {
