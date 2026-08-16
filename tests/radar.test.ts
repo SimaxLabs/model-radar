@@ -20,6 +20,10 @@ function openRouterModel(id: string, prompt: string, completion: string) {
     canonical_slug: "example/model-2026-01-01",
     name: id,
     context_length: 128_000,
+    architecture: {
+      input_modalities: ["text", "image"],
+      output_modalities: ["text"],
+    },
     top_provider: { max_completion_tokens: 16_384 },
     created: 1_700_000_000,
     expiration_date: null,
@@ -67,6 +71,8 @@ describe("radar model variants", () => {
     expect(models.get("example/model:free")).toMatchObject({
       segment: "free",
       contextLength: 128_000,
+      inputModalities: ["text", "image"],
+      outputModalities: ["text"],
       maxCompletionTokens: 16_384,
       intelligenceRank: null,
       isCheap: false,

@@ -13,6 +13,8 @@ function radarModel(
     name: id,
     provider: "test",
     contextLength: 128_000,
+    inputModalities: ["text"],
+    outputModalities: ["text"],
     maxCompletionTokens: 8_192,
     createdAt: "2026-01-01T00:00:00.000Z",
     expiresAt: null,

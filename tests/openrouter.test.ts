@@ -20,6 +20,10 @@ describe("OpenRouter models", () => {
                 context_length: 128_000,
                 created: 1_700_000_000,
                 expiration_date: null,
+                architecture: {
+                  input_modalities: ["text", "image"],
+                  output_modalities: ["text", "audio"],
+                },
                 pricing: { prompt: "0.000001", completion: "0.000005" },
                 benchmarks: {
                   artificial_analysis: {
@@ -43,6 +47,10 @@ describe("OpenRouter models", () => {
       coding_index: 68.1,
       agentic_index: 61.5,
     });
+    expect(models[0]?.architecture).toEqual({
+      input_modalities: ["text", "image"],
+      output_modalities: ["text", "audio"],
+    });
   });
 
   it("keeps free and batch variants while excluding other zero-priced routes", async () => {
@@ -59,6 +67,10 @@ describe("OpenRouter models", () => {
                 context_length: 128_000,
                 created: 1_700_000_000,
                 expiration_date: null,
+                architecture: {
+                  input_modalities: ["text"],
+                  output_modalities: ["text"],
+                },
                 pricing: { prompt: "0.000002", completion: "0.00001" },
               },
               {
@@ -68,6 +80,10 @@ describe("OpenRouter models", () => {
                 context_length: 128_000,
                 created: 1_700_000_000,
                 expiration_date: null,
+                architecture: {
+                  input_modalities: ["text"],
+                  output_modalities: ["text"],
+                },
                 pricing: { prompt: "0.000001", completion: "0.000005" },
               },
               {
@@ -77,7 +93,24 @@ describe("OpenRouter models", () => {
                 context_length: 128_000,
                 created: 1_700_000_000,
                 expiration_date: null,
+                architecture: {
+                  input_modalities: ["text"],
+                  output_modalities: ["text"],
+                },
                 pricing: { prompt: "0", completion: "0" },
+              },
+              {
+                id: "example/invalid-architecture",
+                canonical_slug: "example/invalid-architecture",
+                name: "Example: Invalid Architecture",
+                context_length: 128_000,
+                created: 1_700_000_000,
+                expiration_date: null,
+                architecture: {
+                  input_modalities: "text",
+                  output_modalities: ["text"],
+                },
+                pricing: { prompt: "0.000002", completion: "0.00001" },
               },
               {
                 id: "example/dynamic-route",
@@ -86,6 +119,10 @@ describe("OpenRouter models", () => {
                 context_length: 128_000,
                 created: 1_700_000_000,
                 expiration_date: null,
+                architecture: {
+                  input_modalities: ["text"],
+                  output_modalities: ["text"],
+                },
                 pricing: { prompt: "0", completion: "0" },
               },
               {
@@ -95,6 +132,10 @@ describe("OpenRouter models", () => {
                 context_length: 128_000,
                 created: 1_700_000_000,
                 expiration_date: null,
+                architecture: {
+                  input_modalities: ["text"],
+                  output_modalities: ["text"],
+                },
                 pricing: { prompt: "0", completion: "0" },
               },
             ],

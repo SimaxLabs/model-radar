@@ -19,6 +19,15 @@ function isValidModel(model: unknown): model is OpenRouterModel {
     typeof candidate.canonical_slug === "string" &&
     typeof candidate.context_length === "number" &&
     typeof candidate.created === "number" &&
+    !!candidate.architecture &&
+    Array.isArray(candidate.architecture.input_modalities) &&
+    candidate.architecture.input_modalities.every(
+      (modality) => typeof modality === "string" && modality.length > 0,
+    ) &&
+    Array.isArray(candidate.architecture.output_modalities) &&
+    candidate.architecture.output_modalities.every(
+      (modality) => typeof modality === "string" && modality.length > 0,
+    ) &&
     !!candidate.pricing &&
     typeof candidate.pricing.prompt === "string" &&
     typeof candidate.pricing.completion === "string"

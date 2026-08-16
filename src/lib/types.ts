@@ -21,6 +21,10 @@ export interface OpenRouterModel {
   context_length: number;
   created: number;
   expiration_date: string | null;
+  architecture: {
+    input_modalities: string[];
+    output_modalities: string[];
+  };
   pricing: {
     prompt: string;
     completion: string;
@@ -44,6 +48,8 @@ export interface RadarModel {
   name: string;
   provider: string;
   contextLength: number;
+  inputModalities: string[];
+  outputModalities: string[];
   maxCompletionTokens: number | null;
   createdAt: string;
   expiresAt: string | null;

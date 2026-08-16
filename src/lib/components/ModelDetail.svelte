@@ -1,5 +1,19 @@
 <script lang="ts">
-  import { ExternalLink, X } from "@lucide/svelte";
+  import {
+    ArrowRight,
+    AudioLines,
+    Binary,
+    Captions,
+    CircleQuestionMark,
+    ExternalLink,
+    FileText,
+    Image,
+    ListOrdered,
+    Speech,
+    Type,
+    Video,
+    X,
+  } from "@lucide/svelte";
   import { formatPrice, formatSyncTime, formatTokenCount, money } from "$lib/format";
   import type { ModelSegment, RadarModel } from "$lib/types";
   import ProviderLogo from "$lib/components/ProviderLogo.svelte";
@@ -33,6 +47,27 @@
     if (segment === "free") return "Free";
     if (segment === "batch") return "Batch";
     return "Standard";
+  }
+
+  function modalityLabel(modality: string) {
+    return modality
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (character) => character.toUpperCase());
+  }
+
+  function modalityIcon(modality: string) {
+    switch (modality.toLowerCase()) {
+      case "text": return Type;
+      case "image": return Image;
+      case "file": return FileText;
+      case "audio": return AudioLines;
+      case "video": return Video;
+      case "embeddings": return Binary;
+      case "rerank": return ListOrdered;
+      case "speech": return Speech;
+      case "transcription": return Captions;
+      default: return CircleQuestionMark;
+    }
   }
 </script>
 
@@ -86,9 +121,42 @@
   </section>
 
   <section class="detail-section">
+    <div class="section-heading compact"><div><span class="section-kicker">OPENROUTER</span><h3>Model capabilities</h3></div></div>
+    <p class="detail-section-note">OpenRouter returns text-output models by default; supported inputs can still vary by model.</p>
+    <dl class="detail-list">
+      <div class="detail-modality-row">
+        <dt>Input / output</dt>
+        <dd class="detail-modality-route">
+          <span class="modality-set">
+            {#each model.inputModalities as modality (`input-${modality}`)}
+              {@const ModalityIcon = modalityIcon(modality)}
+              <span class="modality-icon modality-input" role="img" aria-label={`${modalityLabel(modality)} input`} title={`${modalityLabel(modality)} input`}>
+                <ModalityIcon size={15} aria-hidden="true" />
+              </span>
+            {:else}
+              <span class="modality-icon" role="img" aria-label="Input modalities not published" title="Input modalities not published"><CircleQuestionMark size={15} aria-hidden="true" /></span>
+            {/each}
+          </span>
+          <ArrowRight class="modality-route-arrow" size={15} aria-hidden="true" />
+          <span class="modality-set">
+            {#each model.outputModalities as modality (`output-${modality}`)}
+              {@const ModalityIcon = modalityIcon(modality)}
+              <span class="modality-icon modality-output" role="img" aria-label={`${modalityLabel(modality)} output`} title={`${modalityLabel(modality)} output`}>
+                <ModalityIcon size={15} aria-hidden="true" />
+              </span>
+            {:else}
+              <span class="modality-icon" role="img" aria-label="Output modalities not published" title="Output modalities not published"><CircleQuestionMark size={15} aria-hidden="true" /></span>
+            {/each}
+          </span>
+        </dd>
+      </div>
+      <div><dt>Context window</dt><dd>{formatTokenCount(model.contextLength)}</dd></div>
+    </dl>
+  </section>
+
+  <section class="detail-section">
     <div class="section-heading compact"><div><span class="section-kicker">CAPABILITY</span><h3>Artificial Analysis via OpenRouter</h3></div></div>
     <dl class="detail-list">
-      <div><dt>Context window</dt><dd>{formatTokenCount(model.contextLength)}</dd></div>
       <div><dt>AA Index</dt><dd>{model.intelligence ?? "Not available"}</dd></div>
       <div><dt>Coding index</dt><dd>{model.coding ?? "-"}</dd></div>
       <div><dt>Agentic index</dt><dd>{model.agentic ?? "-"}</dd></div>

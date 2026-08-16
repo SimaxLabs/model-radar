@@ -72,6 +72,8 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       name: model.name,
       provider: model.id.split("/")[0],
       contextLength: model.context_length,
+      inputModalities: [...model.architecture.input_modalities],
+      outputModalities: [...model.architecture.output_modalities],
       maxCompletionTokens: finiteScore(model.top_provider?.max_completion_tokens),
       createdAt: new Date(model.created * 1000).toISOString(),
       expiresAt: model.expiration_date ?? null,

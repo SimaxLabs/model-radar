@@ -1809,6 +1809,13 @@ footer a:hover {
   font-size: 16px;
 }
 
+.detail-section-note {
+  margin: -1px 0 10px;
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .detail-list {
   margin: 0;
   border-top: 1px solid var(--border);
@@ -1835,6 +1842,60 @@ footer a:hover {
   font-size: 13px;
   font-weight: 600;
   text-align: right;
+}
+
+.detail-list .detail-modality-row {
+  min-height: 54px;
+}
+
+.detail-modality-route,
+.modality-set {
+  display: flex;
+  align-items: center;
+}
+
+.detail-modality-route {
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.modality-set {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.modality-icon {
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  background: var(--surface);
+  color: var(--faint);
+}
+
+.modality-input {
+  border-color: rgba(87, 148, 242, 0.32);
+  background: rgba(87, 148, 242, 0.09);
+  color: #8ab8ff;
+}
+
+.modality-output {
+  border-color: rgba(255, 120, 10, 0.32);
+  background: rgba(255, 120, 10, 0.09);
+  color: #ffad66;
+}
+
+.modality-icon:hover {
+  border-color: currentColor;
+}
+
+.modality-route-arrow {
+  flex: 0 0 auto;
+  color: var(--faint);
 }
 
 .detail-links {
