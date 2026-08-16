@@ -18,22 +18,24 @@
     RefreshCw,
     Scale,
     Search,
-    Wallet,
+    Shapes,
     X,
   } from "@lucide/svelte";
   import ModelComparison from "$lib/components/ModelComparison.svelte";
   import ModelDetail from "$lib/components/ModelDetail.svelte";
+  import ModelModalities from "$lib/components/ModelModalities.svelte";
   import PriceChange from "$lib/components/PriceChange.svelte";
   import ProviderLogo from "$lib/components/ProviderLogo.svelte";
   import RecommendationCard from "$lib/components/RecommendationCard.svelte";
+  import SpecializedRates from "$lib/components/SpecializedRates.svelte";
   import SourcePill from "$lib/components/SourcePill.svelte";
   import { displayModelName, formatPrice, formatSyncTime, formatTokenCount, money } from "$lib/format";
-  import { rankBudgetModels } from "$lib/scoring";
+  import { hasTokenPricing, rankBudgetModels } from "$lib/scoring";
   import type { RadarData, RadarModel } from "$lib/types";
   import type { PageData } from "./$types";
 
-  type Filter = "all" | "cheap" | "changed" | "free" | "batch" | "search";
-  type Sort = "changed" | "intelligence" | "input" | "output" | "monthly";
+  type Filter = "all" | "changed" | "specialized" | "free" | "batch" | "search";
+  type Sort = "changed" | "intelligence" | "input" | "output" | "monthly" | "name";
   type SortDirection = "asc" | "desc";
   const RECOMMENDATION_COUNT = 5;
   const COMPARISON_MIN = 2;
@@ -71,8 +73,13 @@
       .map((modelId) => radar.models.find((model) => model.id === modelId))
       .filter((model): model is RadarModel => model !== undefined),
   );
-  let onDemandModels = $derived(
-    radar.models.filter((model) => model.segment !== "free" && model.segment !== "batch"),
+  let tokenPricedModels = $derived(
+    radar.models.filter(
+      (model) =>
+        model.segment !== "free" &&
+        model.segment !== "batch" &&
+        hasTokenPricing(model),
+    ),
   );
   let recentArticleCount = $derived.by(() => {
     const cutoffDate = new Date(
@@ -83,7 +90,7 @@
     ).length;
   });
   let topQuality = $derived(
-    onDemandModels.filter((model) => model.intelligence !== null).sort(
+    tokenPricedModels.filter((model) => model.intelligence !== null).sort(
       (left, right) =>
         (left.intelligenceRank ?? Infinity) -
         (right.intelligenceRank ?? Infinity),
@@ -98,7 +105,7 @@
     let drops = 0;
     let mixed = 0;
 
-    for (const model of onDemandModels) {
+    for (const model of tokenPricedModels) {
       if (!model.priceChangeRecordedAt || Date.parse(model.priceChangeRecordedAt) < cutoff) continue;
       const changes = [model.inputPriceChangePercent, model.outputPriceChangePercent].filter(
         (change): change is number => change !== null && Math.abs(change) >= 0.001,
@@ -114,7 +121,7 @@
   });
 
   function hasPriceChange(model: RadarModel) {
-    return [model.inputPriceChangePercent, model.outputPriceChangePercent].some(
+    return hasTokenPricing(model) && [model.inputPriceChangePercent, model.outputPriceChangePercent].some(
       (change) => change !== null && Math.abs(change) >= 0.001,
     );
   }
@@ -123,19 +130,33 @@
     return value === null ? "Not published" : formatTokenCount(value);
   }
 
+  function formatContextLength(value: number) {
+    return value > 0 ? formatTokenCount(value) : "Not applicable";
+  }
+
+  function monthlyCost(model: RadarModel) {
+    return hasTokenPricing(model)
+      ? model.inputPrice * safeInputMillions + model.outputPrice * safeOutputMillions
+      : null;
+  }
+
   let matchingModels = $derived.by(() => {
     const query = search.trim().toLowerCase();
     return radar.models
       .filter((model) => {
         const isSpecialVariant = model.segment === "free" || model.segment === "batch";
         if (filter === "all" && isSpecialVariant) return false;
-        if (filter === "cheap" && !model.isCheap) return false;
         if (filter === "changed" && (isSpecialVariant || !hasPriceChange(model))) return false;
         if (filter === "free" && model.segment !== "free") return false;
         if (filter === "batch" && model.segment !== "batch") return false;
+        if (filter === "specialized" && model.segment !== "specialized") return false;
         return !query || `${model.name} ${model.provider} ${model.id}`.toLowerCase().includes(query);
       })
       .sort((left, right) => {
+        if (sort === "name") {
+          return displayModelName(left.name).localeCompare(displayModelName(right.name)) *
+            (sortDirection === "asc" ? 1 : -1);
+        }
         let leftValue: number | null;
         let rightValue: number | null;
         if (sort === "changed") {
@@ -151,12 +172,19 @@
           leftValue = left.outputPrice;
           rightValue = right.outputPrice;
         } else {
-          leftValue = left.inputPrice * safeInputMillions + left.outputPrice * safeOutputMillions;
-          rightValue = right.inputPrice * safeInputMillions + right.outputPrice * safeOutputMillions;
+          leftValue = monthlyCost(left);
+          rightValue = monthlyCost(right);
         }
-        if (leftValue === null) return rightValue === null ? 0 : 1;
+        if (leftValue === null) {
+          return rightValue === null
+            ? displayModelName(left.name).localeCompare(displayModelName(right.name))
+            : 1;
+        }
         if (rightValue === null) return -1;
-        return (leftValue - rightValue) * (sortDirection === "asc" ? 1 : -1);
+        return (
+          (leftValue - rightValue) * (sortDirection === "asc" ? 1 : -1) ||
+          displayModelName(left.name).localeCompare(displayModelName(right.name))
+        );
       });
   });
   let totalPages = $derived(Math.max(1, Math.ceil(matchingModels.length / PAGE_SIZE)));
@@ -169,7 +197,7 @@
     pageNumber = 1;
     if (search.trim()) {
       filter = "search";
-      if (sort === "changed") {
+      if (sort === "changed" || sort === "name") {
         sort = "intelligence";
         sortDirection = "desc";
       }
@@ -180,14 +208,18 @@
 
   function selectFilter(nextFilter: Filter) {
     const wasShowingChanges = filter === "changed";
+    const wasShowingSpecialized = filter === "specialized";
     filter = nextFilter;
     if (nextFilter === "changed") {
       sort = "changed";
       sortDirection = "desc";
+    } else if (nextFilter === "specialized") {
+      sort = "name";
+      sortDirection = "asc";
     } else if (nextFilter === "free") {
       sort = "intelligence";
       sortDirection = "desc";
-    } else if (wasShowingChanges && sort === "changed") {
+    } else if ((wasShowingChanges && sort === "changed") || (wasShowingSpecialized && sort === "name")) {
       sort = "intelligence";
       sortDirection = "desc";
     }
@@ -334,7 +366,7 @@
           <span class="panel-icon"><Gauge size={17} /></span>
           <div>
             <strong>Monthly workload</strong>
-            <p>Cost estimates across this dashboard use these token volumes.</p>
+            <p>Cost estimates for token-priced models use these volumes; specialized models are excluded.</p>
           </div>
         </div>
         <div class="calculator-fields">
@@ -347,12 +379,12 @@
         <article class="metric-card metric-models">
           <div class="metric-card-top"><span>On-demand models</span><Database size={16} /></div>
           <div class="metric-value"><strong>{radar.summary.paidModels}</strong><span>routes</span></div>
-          <p>{radar.summary.rankedModels} ranked by Artificial Analysis; free and batch routes separated</p>
+          <p>{radar.summary.rankedModels} token-priced routes ranked; {radar.summary.specializedModels} specialized</p>
         </article>
-        <a class="metric-card metric-card-link metric-budget" href="#models" onclick={() => { activeSection = "models"; selectFilter("cheap"); }}>
-          <div class="metric-card-top"><span>Budget models</span><Wallet size={16} /></div>
-          <div class="metric-value"><strong>{radar.summary.cheapModels}</strong><span>models</span></div>
-          <p>At or below {money.format(radar.summary.cheapThreshold)} blended per 1M tokens</p>
+        <a class="metric-card metric-card-link metric-specialized" href="#models" onclick={() => { activeSection = "models"; selectFilter("specialized"); }}>
+          <div class="metric-card-top"><span>Specialized models</span><Shapes size={16} /></div>
+          <div class="metric-value"><strong>{radar.summary.specializedModels}</strong><span>models</span></div>
+          <p>Image, audio, video, embedding, and other non-text outputs</p>
         </a>
         <a class="metric-card metric-card-link metric-news" href="#news" onclick={() => activeSection = "news"}>
           <div class="metric-card-top"><span>New articles</span><Newspaper size={16} /></div>
@@ -368,7 +400,7 @@
 
       <section class="dashboard-section recommendations-section" aria-label="Top model recommendations">
         <div class="recommendation-grid">
-          <RecommendationCard eyebrow="BEST CAPABILITY" method="Paid OpenRouter models with an AA Index are sorted from highest to lowest. The five highest-ranked models are shown." models={topQuality} tone="ink" onselect={(model) => selectedModel = model} />
+          <RecommendationCard eyebrow="BEST CAPABILITY" method="Token-priced paid OpenRouter models with an AA Index are sorted from highest to lowest. The five highest-ranked models are shown." models={topQuality} tone="ink" onselect={(model) => selectedModel = model} />
           <RecommendationCard eyebrow="BEST UNDER BUDGET" method={`Paid models at or below ${money.format(radar.summary.cheapThreshold)} blended per 1M tokens are scored within the cheap set: 50% normalized AA Index and 50% log-price affordability. The five highest scores are shown.`} models={topBudget} tone="lime" onselect={(model) => selectedModel = model} />
         </div>
       </section>
@@ -420,7 +452,7 @@
             <span class="global-search-label">Search results <b>{matchingModels.length}</b></span>
           {/if}
           <button class:active={filter === "all"} aria-pressed={filter === "all"} onclick={() => selectFilter("all")}>All paid <span>{radar.summary.paidModels}</span></button>
-          <button class:active={filter === "cheap"} aria-pressed={filter === "cheap"} onclick={() => selectFilter("cheap")}>Budget <span>{radar.summary.cheapModels}</span></button>
+          <button class:active={filter === "specialized"} aria-pressed={filter === "specialized"} onclick={() => selectFilter("specialized")}>Specialized <span>{radar.summary.specializedModels}</span></button>
           <button class:active={filter === "free"} aria-pressed={filter === "free"} onclick={() => selectFilter("free")}>Free <span>{radar.summary.freeModels}</span></button>
           <button class:active={filter === "batch"} aria-pressed={filter === "batch"} onclick={() => selectFilter("batch")}>Batch <span>{radar.summary.batchModels}</span></button>
           <button class:active={filter === "changed"} aria-pressed={filter === "changed"} onclick={() => selectFilter("changed")}>Price changed <span>{radar.summary.priceChangedModels}</span></button>
@@ -435,21 +467,30 @@
             <strong>Asynchronous OpenRouter batches</strong>
             <span>Batch models are for text-only workloads that do not need an immediate response. OpenRouter uses a 24-hour completion window and typically charges 50% of standard per-token pricing.</span>
           </div>
+        {:else if filter === "specialized"}
+          <div class="model-filter-note model-filter-note-specialized" role="note">
+            <strong>Non-text output models</strong>
+            <span>Image, audio, video, embedding, and similar models use different pricing units. Available native rates are shown without cross-unit sorting, blended prices, workload estimates, rankings, or price history.</span>
+          </div>
         {/if}
 
         <div class="mobile-sort">
           <label>
             <span>Sort by</span>
             <select value={sort} onchange={changeSort}>
-              <option value="intelligence">AA Index</option>
-              {#if filter !== "free"}
-                <option value="input">Input price</option>
-                <option value="output">Output price</option>
-              {/if}
-              {#if filter === "changed"}
-                <option value="changed">Price move recorded</option>
-              {:else if filter !== "free"}
-                <option value="monthly">Monthly estimate</option>
+              {#if filter === "specialized"}
+                <option value="name">Name</option>
+              {:else}
+                <option value="intelligence">AA Index</option>
+                {#if filter !== "free"}
+                  <option value="input">Input price</option>
+                  <option value="output">Output price</option>
+                {/if}
+                {#if filter === "changed"}
+                  <option value="changed">Price move recorded</option>
+                {:else if filter !== "free"}
+                  <option value="monthly">Monthly estimate</option>
+                {/if}
               {/if}
             </select>
           </label>
@@ -464,19 +505,26 @@
               <tr>
                 <th class="model-col">Model</th>
                 <th class="context-col">Context</th>
-                <th class="intelligence-col sortable-column" aria-sort={sort === "intelligence" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
-                  <button type="button" onclick={() => toggleSort("intelligence")}>
-                    AA Index
-                    {#if sort === "intelligence"}
-                      {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
-                    {:else}
-                      <ArrowUpDown size={13} />
-                    {/if}
-                  </button>
-                </th>
+                {#if filter === "specialized"}
+                  <th class="specialized-price-col">Input price</th>
+                  <th class="specialized-price-col">Output price</th>
+                {:else}
+                  <th class="intelligence-col sortable-column" aria-sort={sort === "intelligence" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
+                    <button type="button" onclick={() => toggleSort("intelligence")}>
+                      AA Index
+                      {#if sort === "intelligence"}
+                        {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
+                      {:else}
+                        <ArrowUpDown size={13} />
+                      {/if}
+                    </button>
+                  </th>
+                {/if}
                 {#if filter === "free"}
                   <th class="limit-col">Max output</th>
                   <th class="limit-col">Requests / min</th>
+                {:else if filter === "specialized"}
+                  <th class="modality-col">Input / output</th>
                 {:else}
                   <th class="input-col sortable-column" aria-sort={sort === "input" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
                     <button type="button" onclick={() => toggleSort("input")}>
@@ -511,9 +559,12 @@
                     </button>
                   </th>
                 {/if}
+                {#if filter === "all"}
+                  <th class="modality-col">Input / output</th>
+                {/if}
                 {#if filter === "free"}
                   <th class="limit-col">Requests / day</th>
-                {:else if filter !== "changed"}
+                {:else if filter !== "changed" && filter !== "specialized"}
                   <th class="monthly-col sortable-column" aria-sort={sort === "monthly" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
                     <button type="button" onclick={() => toggleSort("monthly")}>
                       Monthly est.
@@ -530,26 +581,39 @@
             </thead>
             <tbody>
               {#each pageModels as model (model.id)}
-                {@const monthlyCost = model.inputPrice * safeInputMillions + model.outputPrice * safeOutputMillions}
+                {@const estimatedCost = monthlyCost(model)}
                 {@const inComparison = comparisonIds.includes(model.id)}
                 <tr>
                   <td class="model-col"><button class="model-identity" onclick={() => selectedModel = model}><ProviderLogo provider={model.provider} size="small" /><span><strong>{displayModelName(model.name)}</strong></span></button></td>
-                  <td class="context-col">{formatTokenCount(model.contextLength)}</td>
-                  <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></td>
+                  <td class="context-col">{formatContextLength(model.contextLength)}</td>
+                  {#if filter === "specialized"}
+                    <td class="specialized-price-col"><SpecializedRates rates={model.specializedPricing?.input ?? []} /></td>
+                    <td class="specialized-price-col"><SpecializedRates rates={model.specializedPricing?.output ?? []} /></td>
+                  {:else}
+                    <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></td>
+                  {/if}
                   {#if filter === "free"}
                     <td class="limit-col limit-cell"><strong>{formatTokenLimit(model.maxCompletionTokens)}</strong>{#if model.maxCompletionTokens !== null}<span>tokens</span>{/if}</td>
                     <td class="limit-col limit-cell"><strong>20</strong><span>shared</span></td>
-                  {:else}
+                  {:else if filter === "specialized"}
+                    <td class="modality-col specialized-route-cell"><ModelModalities inputModalities={model.inputModalities} outputModalities={model.outputModalities} /></td>
+                  {:else if hasTokenPricing(model)}
                     <td class="input-col"><span class="price-with-move"><span>{formatPrice(model.inputPrice)}</span>{#if model.inputPriceChangePercent !== null && Math.abs(model.inputPriceChangePercent) >= 0.001}<PriceChange value={model.inputPriceChangePercent} detail={priceMoveDetail(model, "input")} />{/if}</span></td>
                     <td class="output-col"><span class="price-with-move"><span>{formatPrice(model.outputPrice)}</span>{#if model.outputPriceChangePercent !== null && Math.abs(model.outputPriceChangePercent) >= 0.001}<PriceChange value={model.outputPriceChangePercent} detail={priceMoveDetail(model, "output")} />{/if}</span></td>
+                  {:else}
+                    <td class="input-col specialized-rate-unavailable">N/A</td>
+                    <td class="output-col specialized-rate-unavailable">N/A</td>
                   {/if}
                   {#if filter === "changed"}
                     <td class="movement-col">{model.priceChangeRecordedAt ? formatSyncTime(model.priceChangeRecordedAt) : "Unavailable"}</td>
                   {/if}
+                  {#if filter === "all"}
+                    <td class="modality-col specialized-route-cell"><ModelModalities inputModalities={model.inputModalities} outputModalities={model.outputModalities} /></td>
+                  {/if}
                   {#if filter === "free"}
                     <td class="limit-col limit-cell"><strong>50 / 1,000</strong><span>shared</span></td>
-                  {:else if filter !== "changed"}
-                    <td class="monthly-col"><strong>{money.format(monthlyCost)}</strong></td>
+                  {:else if filter !== "changed" && filter !== "specialized"}
+                    <td class="monthly-col"><strong>{estimatedCost === null ? "N/A" : money.format(estimatedCost)}</strong></td>
                   {/if}
                   <td class="action-col">
                     <div class="row-actions">
@@ -573,7 +637,7 @@
           </table>
           <div class="model-card-list">
             {#each pageModels as model (model.id)}
-              {@const monthlyCost = model.inputPrice * safeInputMillions + model.outputPrice * safeOutputMillions}
+              {@const estimatedCost = monthlyCost(model)}
               {@const inComparison = comparisonIds.includes(model.id)}
               <article class="model-card">
                 <div class="model-card-heading">
@@ -583,16 +647,24 @@
                   </button>
                 </div>
                 <dl class="model-card-metrics">
-                  <div><dt>Context window</dt><dd>{formatTokenCount(model.contextLength)}</dd></div>
-                  <div>
-                    <dt>AA Index</dt>
-                    <dd><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></dd>
-                  </div>
+                  <div class:model-card-wide={filter === "specialized"}><dt>Context window</dt><dd>{formatContextLength(model.contextLength)}</dd></div>
+                  {#if filter !== "specialized"}
+                    <div>
+                      <dt>AA Index</dt>
+                      <dd><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></dd>
+                    </div>
+                  {/if}
                   {#if filter === "free"}
                     <div><dt>Max output</dt><dd>{formatTokenLimit(model.maxCompletionTokens)}{#if model.maxCompletionTokens !== null}<small> tokens</small>{/if}</dd></div>
                     <div><dt>Requests / min</dt><dd>20 <small>shared</small></dd></div>
                     <div><dt>Requests / day</dt><dd>50 / 1,000 <small>shared</small></dd></div>
-                  {:else}
+                  {:else if model.pricingBasis === "specialized"}
+                    {#if filter === "specialized"}
+                      <div><dt>Input price</dt><dd><SpecializedRates rates={model.specializedPricing?.input ?? []} /></dd></div>
+                      <div><dt>Output price</dt><dd><SpecializedRates rates={model.specializedPricing?.output ?? []} /></dd></div>
+                      <div class="model-card-wide"><dt>Input / output</dt><dd><ModelModalities inputModalities={model.inputModalities} outputModalities={model.outputModalities} /></dd></div>
+                    {/if}
+                  {:else if hasTokenPricing(model)}
                     <div>
                       <dt>Input / 1M</dt>
                       <dd><span class="price-with-move"><span>{formatPrice(model.inputPrice)}</span>{#if model.inputPriceChangePercent !== null && Math.abs(model.inputPriceChangePercent) >= 0.001}<PriceChange value={model.inputPriceChangePercent} detail={priceMoveDetail(model, "input")} />{/if}</span></dd>
@@ -604,8 +676,8 @@
                   {/if}
                   {#if filter === "changed"}
                     <div class="model-card-wide"><dt>Price move recorded</dt><dd>{model.priceChangeRecordedAt ? formatSyncTime(model.priceChangeRecordedAt) : "Unavailable"}</dd></div>
-                  {:else if filter !== "free"}
-                    <div class="model-card-wide model-card-monthly"><dt>Monthly estimate</dt><dd>{money.format(monthlyCost)}</dd></div>
+                  {:else if filter !== "free" && estimatedCost !== null}
+                    <div class="model-card-wide model-card-monthly"><dt>Monthly estimate</dt><dd>{money.format(estimatedCost)}</dd></div>
                   {/if}
                 </dl>
                 <div class="model-card-actions">

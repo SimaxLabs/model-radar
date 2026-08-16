@@ -528,7 +528,7 @@ a {
 }
 
 .metric-models::before { background: var(--orange); }
-.metric-budget::before { background: var(--blue); }
+.metric-specialized::before { background: #b77eff; }
 .metric-news::before { background: var(--green); }
 .metric-moves::before { background: var(--yellow); }
 
@@ -553,9 +553,9 @@ a {
   color: var(--orange-bright);
 }
 
-.metric-budget .metric-card-top svg {
-  background: rgba(87, 148, 242, 0.13);
-  color: #8ab8ff;
+.metric-specialized .metric-card-top svg {
+  background: rgba(183, 126, 255, 0.13);
+  color: #c8a2ff;
 }
 
 .metric-news .metric-card-top svg {
@@ -1216,6 +1216,14 @@ a {
   color: #8ab8ff;
 }
 
+.model-filter-note-specialized {
+  background: rgba(183, 126, 255, 0.06);
+}
+
+.model-filter-note-specialized strong {
+  color: #c8a2ff;
+}
+
 .table-wrap {
   overflow-x: auto;
   scroll-margin-top: 65px;
@@ -1308,6 +1316,8 @@ tbody tr:hover td {
 
 .context-col { min-width: 84px; }
 .intelligence-col { min-width: 92px; }
+.modality-col { min-width: 190px; }
+.specialized-price-col { min-width: 190px; }
 .limit-col { min-width: 112px; }
 .input-col,
 .output-col { min-width: 142px; }
@@ -1429,6 +1439,56 @@ tbody tr:hover td {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+.specialized-route-cell .modality-route {
+  justify-content: flex-start;
+}
+
+td.specialized-price-col {
+  height: auto;
+  min-height: 56px;
+  padding-block: 8px;
+  white-space: normal;
+}
+
+.specialized-rate-list {
+  display: grid;
+  gap: 3px;
+}
+
+.specialized-rate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px;
+  line-height: 1.35;
+}
+
+.specialized-rate > span {
+  color: var(--muted);
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.specialized-rate strong {
+  color: var(--text-strong);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.specialized-rate small,
+.specialized-rate-unavailable {
+  color: var(--faint);
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.model-card-metrics .specialized-rate-list {
+  justify-items: start;
 }
 
 .change-has-detail {
@@ -1803,6 +1863,12 @@ footer a:hover {
   color: #78bde7;
 }
 
+.segment-tag.segment-specialized {
+  border-color: #684d85;
+  background: rgba(183, 126, 255, 0.1);
+  color: #c8a2ff;
+}
+
 .detail-estimate-list {
   box-shadow: inset 2px 0 0 var(--orange);
 }
@@ -1862,13 +1928,18 @@ footer a:hover {
   min-height: 54px;
 }
 
-.detail-modality-route,
+.detail-list .detail-specialized-rate-row {
+  min-height: 54px;
+  padding-block: 8px;
+}
+
+.modality-route,
 .modality-set {
   display: flex;
   align-items: center;
 }
 
-.detail-modality-route {
+.modality-route {
   justify-content: flex-end;
   gap: 7px;
 }
@@ -2049,6 +2120,19 @@ footer a:hover {
   font-size: 15px;
   font-weight: 600;
   line-height: 1.25;
+}
+
+.comparison-modalities {
+  margin-top: 8px;
+}
+
+.comparison-modalities .modality-route {
+  justify-content: flex-start;
+}
+
+.comparison-modalities .modality-icon {
+  width: 25px;
+  height: 25px;
 }
 
 .comparison-table thead a {

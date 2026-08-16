@@ -1,23 +1,18 @@
 <script lang="ts">
-  import {
-    ArrowRight,
-    AudioLines,
-    Binary,
-    Captions,
-    CircleQuestionMark,
-    ExternalLink,
-    FileText,
-    Image,
-    ListOrdered,
-    Speech,
-    Type,
-    Video,
-    X,
-  } from "@lucide/svelte";
+  import { ExternalLink, X } from "@lucide/svelte";
   import { formatPrice, formatSyncTime, formatTokenCount, money } from "$lib/format";
   import type { ModelSegment, RadarModel } from "$lib/types";
+  import ModelModalities from "$lib/components/ModelModalities.svelte";
   import ProviderLogo from "$lib/components/ProviderLogo.svelte";
   import PriceChange from "$lib/components/PriceChange.svelte";
+  import SpecializedRates from "$lib/components/SpecializedRates.svelte";
+
+  const modelDate = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 
   let {
     model,
@@ -33,7 +28,9 @@
 
   let dialog: HTMLDialogElement;
   let monthlyCost = $derived(
-    model.inputPrice * inputMillions + model.outputPrice * outputMillions,
+    model.inputPrice === null || model.outputPrice === null
+      ? null
+      : model.inputPrice * inputMillions + model.outputPrice * outputMillions,
   );
 
   $effect(() => {
@@ -46,28 +43,8 @@
     if (segment === "cheap") return "Cheap";
     if (segment === "free") return "Free";
     if (segment === "batch") return "Batch";
+    if (segment === "specialized") return "Specialized";
     return "Standard";
-  }
-
-  function modalityLabel(modality: string) {
-    return modality
-      .replaceAll("_", " ")
-      .replace(/\b\w/g, (character) => character.toUpperCase());
-  }
-
-  function modalityIcon(modality: string) {
-    switch (modality.toLowerCase()) {
-      case "text": return Type;
-      case "image": return Image;
-      case "file": return FileText;
-      case "audio": return AudioLines;
-      case "video": return Video;
-      case "embeddings": return Binary;
-      case "rerank": return ListOrdered;
-      case "speech": return Speech;
-      case "transcription": return Captions;
-      default: return CircleQuestionMark;
-    }
   }
 </script>
 
@@ -89,68 +66,60 @@
     <span class={`segment-tag segment-${model.segment}`}>{segmentLabel(model.segment)}</span>
   </div>
 
-  <section class="detail-section">
-    <div class="section-heading compact"><div><span class="section-kicker">WORKLOAD</span><h3>Estimated cost</h3></div></div>
-    <dl class="detail-list detail-estimate-list">
-      <div><dt>Monthly estimate</dt><dd>{money.format(monthlyCost)}</dd></div>
-      <div><dt>Token volume</dt><dd>{inputMillions}M in / {outputMillions}M out</dd></div>
-    </dl>
-  </section>
+  {#if model.pricingBasis === "token" && model.inputPrice !== null && model.outputPrice !== null && monthlyCost !== null}
+    <section class="detail-section">
+      <div class="section-heading compact"><div><span class="section-kicker">WORKLOAD</span><h3>Estimated cost</h3></div></div>
+      <dl class="detail-list detail-estimate-list">
+        <div><dt>Monthly estimate</dt><dd>{money.format(monthlyCost)}</dd></div>
+        <div><dt>Token volume</dt><dd>{inputMillions}M in / {outputMillions}M out</dd></div>
+      </dl>
+    </section>
 
-  <section class="detail-section">
-    <div class="section-heading compact"><div><span class="section-kicker">PRICE CARD</span><h3>OpenRouter rates</h3></div></div>
-    <dl class="detail-list">
-      <div><dt>Input / 1M</dt><dd>{formatPrice(model.inputPrice)}</dd></div>
-      <div><dt>Output / 1M</dt><dd>{formatPrice(model.outputPrice)}</dd></div>
-    </dl>
-  </section>
+    <section class="detail-section">
+      <div class="section-heading compact"><div><span class="section-kicker">PRICE CARD</span><h3>OpenRouter rates</h3></div></div>
+      <dl class="detail-list">
+        <div><dt>Input / 1M</dt><dd>{formatPrice(model.inputPrice)}</dd></div>
+        <div><dt>Output / 1M</dt><dd>{formatPrice(model.outputPrice)}</dd></div>
+      </dl>
+    </section>
 
-  <section class="detail-section">
-    <div class="section-heading compact"><div><span class="section-kicker">PRICE MOVEMENT</span><h3>Direct rate changes</h3></div></div>
-    <dl class="detail-list">
-      <div><dt>Input movement</dt><dd><PriceChange value={model.inputPriceChangePercent} /></dd></div>
-      {#if model.previousInputPrice !== null && model.previousOutputPrice !== null}
-        <div><dt>Original input / 1M</dt><dd>{formatPrice(model.previousInputPrice)}</dd></div>
-      {/if}
-      <div><dt>Output movement</dt><dd><PriceChange value={model.outputPriceChangePercent} /></dd></div>
-      {#if model.previousInputPrice !== null && model.previousOutputPrice !== null}
-        <div><dt>Original output / 1M</dt><dd>{formatPrice(model.previousOutputPrice)}</dd></div>
-        <div><dt>Price move recorded</dt><dd>{model.priceChangeRecordedAt ? formatSyncTime(model.priceChangeRecordedAt) : "Unavailable"}</dd></div>
-      {/if}
-    </dl>
-  </section>
+    <section class="detail-section">
+      <div class="section-heading compact"><div><span class="section-kicker">PRICE MOVEMENT</span><h3>Direct rate changes</h3></div></div>
+      <dl class="detail-list">
+        <div><dt>Input movement</dt><dd><PriceChange value={model.inputPriceChangePercent} /></dd></div>
+        {#if model.previousInputPrice !== null && model.previousOutputPrice !== null}
+          <div><dt>Original input / 1M</dt><dd>{formatPrice(model.previousInputPrice)}</dd></div>
+        {/if}
+        <div><dt>Output movement</dt><dd><PriceChange value={model.outputPriceChangePercent} /></dd></div>
+        {#if model.previousInputPrice !== null && model.previousOutputPrice !== null}
+          <div><dt>Original output / 1M</dt><dd>{formatPrice(model.previousOutputPrice)}</dd></div>
+          <div><dt>Price move recorded</dt><dd>{model.priceChangeRecordedAt ? formatSyncTime(model.priceChangeRecordedAt) : "Unavailable"}</dd></div>
+        {/if}
+      </dl>
+    </section>
+  {:else if model.specializedPricing !== null}
+    <section class="detail-section">
+      <div class="section-heading compact"><div><span class="section-kicker">PRICE CARD</span><h3>Native OpenRouter rates</h3></div></div>
+      <p class="detail-section-note">Rates retain their published units and are not used for workload estimates or cross-model price comparisons.</p>
+      <dl class="detail-list">
+        <div class="detail-specialized-rate-row"><dt>Input price</dt><dd><SpecializedRates rates={model.specializedPricing.input} /></dd></div>
+        <div class="detail-specialized-rate-row"><dt>Output price</dt><dd><SpecializedRates rates={model.specializedPricing.output} /></dd></div>
+      </dl>
+    </section>
+  {/if}
 
   <section class="detail-section">
     <div class="section-heading compact"><div><span class="section-kicker">OPENROUTER</span><h3>Model capabilities</h3></div></div>
-    <p class="detail-section-note">OpenRouter returns text-output models by default; supported inputs can still vary by model.</p>
+    {#if model.pricingBasis === "specialized"}<p class="detail-section-note">This model uses non-token or mixed-unit pricing, so workload cost estimates are intentionally omitted.</p>{/if}
     <dl class="detail-list">
       <div class="detail-modality-row">
         <dt>Input / output</dt>
-        <dd class="detail-modality-route">
-          <span class="modality-set">
-            {#each model.inputModalities as modality (`input-${modality}`)}
-              {@const ModalityIcon = modalityIcon(modality)}
-              <span class="modality-icon modality-input" role="img" aria-label={`${modalityLabel(modality)} input`} title={`${modalityLabel(modality)} input`}>
-                <ModalityIcon size={15} aria-hidden="true" />
-              </span>
-            {:else}
-              <span class="modality-icon" role="img" aria-label="Input modalities not published" title="Input modalities not published"><CircleQuestionMark size={15} aria-hidden="true" /></span>
-            {/each}
-          </span>
-          <ArrowRight class="modality-route-arrow" size={15} aria-hidden="true" />
-          <span class="modality-set">
-            {#each model.outputModalities as modality (`output-${modality}`)}
-              {@const ModalityIcon = modalityIcon(modality)}
-              <span class="modality-icon modality-output" role="img" aria-label={`${modalityLabel(modality)} output`} title={`${modalityLabel(modality)} output`}>
-                <ModalityIcon size={15} aria-hidden="true" />
-              </span>
-            {:else}
-              <span class="modality-icon" role="img" aria-label="Output modalities not published" title="Output modalities not published"><CircleQuestionMark size={15} aria-hidden="true" /></span>
-            {/each}
-          </span>
-        </dd>
+        <dd><ModelModalities inputModalities={model.inputModalities} outputModalities={model.outputModalities} /></dd>
       </div>
-      <div><dt>Context window</dt><dd>{formatTokenCount(model.contextLength)}</dd></div>
+      <div><dt>Context window</dt><dd>{model.contextLength > 0 ? formatTokenCount(model.contextLength) : "Not applicable"}</dd></div>
+      {#if model.maxCompletionTokens !== null && model.maxCompletionTokens > 0}<div><dt>Max output</dt><dd>{formatTokenCount(model.maxCompletionTokens)}</dd></div>{/if}
+      <div><dt>Added to OpenRouter</dt><dd>{modelDate.format(new Date(model.createdAt))}</dd></div>
+      {#if model.expiresAt}<div><dt>Expires</dt><dd>{modelDate.format(new Date(model.expiresAt))}</dd></div>{/if}
     </dl>
   </section>
 

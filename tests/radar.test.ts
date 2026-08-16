@@ -14,7 +14,12 @@ vi.mock("$lib/server/db/snapshots", () => ({ syncPriceHistory: mocks.syncPriceHi
 
 import { getRadarData } from "$lib/server/radar";
 
-function openRouterModel(id: string, prompt: string, completion: string) {
+function openRouterModel(
+  id: string,
+  prompt: string,
+  completion: string,
+  outputModalities = ["text"],
+) {
   return {
     id,
     canonical_slug: "example/model-2026-01-01",
@@ -22,7 +27,7 @@ function openRouterModel(id: string, prompt: string, completion: string) {
     context_length: 128_000,
     architecture: {
       input_modalities: ["text", "image"],
-      output_modalities: ["text"],
+      output_modalities: outputModalities,
     },
     top_provider: { max_completion_tokens: 16_384 },
     created: 1_700_000_000,
@@ -50,13 +55,24 @@ describe("radar model variants", () => {
       openRouterModel("example/model", "0.000002", "0.000004"),
       openRouterModel("example/model:free", "0", "0"),
       openRouterModel("example/model:batch", "0.000001", "0.000002"),
+      {
+        ...openRouterModel("example/image-model", "0.000002", "0", ["image"]),
+        pricing: {
+          prompt: "0.000002",
+          completion: "0",
+          image: "0.003",
+          image_token: "0.00001",
+          image_output: "0.00001",
+        },
+      },
     ]);
 
     const radar = await getRadarData(true);
     const models = new Map(radar.models.map((model) => [model.id, model]));
 
     expect(radar.summary).toMatchObject({
-      paidModels: 1,
+      paidModels: 2,
+      specializedModels: 1,
       freeModels: 1,
       batchModels: 1,
       rankedModels: 1,
@@ -86,5 +102,28 @@ describe("radar model variants", () => {
       isStateOfTheArt: false,
       valueScore: null,
     });
+    expect(models.get("example/image-model")).toMatchObject({
+      segment: "specialized",
+      pricingBasis: "specialized",
+      specializedPricing: {
+        input: [
+          { label: "Text", price: 2, unit: "1M text tokens" },
+          { label: "Image", price: 0.003, unit: "input image" },
+        ],
+        output: [{ label: "Image", price: 10, unit: "1M image tokens" }],
+      },
+      inputPrice: null,
+      outputPrice: null,
+      blendedPrice: null,
+      intelligenceRank: null,
+      isCheap: false,
+      isStateOfTheArt: false,
+      valueScore: null,
+    });
+    expect(mocks.syncPriceHistory).toHaveBeenCalledWith(
+      expect.not.arrayContaining([expect.objectContaining({ modelId: "example/image-model" })]),
+      expect.any(Date),
+      1,
+    );
   });
 });

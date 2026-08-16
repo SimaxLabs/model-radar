@@ -1,15 +1,16 @@
 # Model Radar
 
-Model Radar is a Svelte 5 and SvelteKit application for tracking paid AI model prices from OpenRouter and comparing them with independent Artificial Analysis benchmarks supplied through OpenRouter. Daily prices are persisted through Drizzle and libSQL, using a local file during development or Turso in production.
+Model Radar is a Svelte 5 and SvelteKit application for exploring paid AI models from OpenRouter, tracking comparable token prices, and comparing models with independent Artificial Analysis benchmarks supplied through OpenRouter. Daily token prices are persisted through Drizzle and libSQL, using a local file during development or Turso in production.
 
 ## Features
 
-- Live paid-model pricing from OpenRouter
-- Free, zero-priced, and dynamic-price routes excluded
+- Live token-priced and specialized model data from OpenRouter
+- Image, audio, video, embedding, and other non-text output models in a dedicated view
+- Generic free, zero-priced text, and dynamic-price routes excluded
 - Artificial Analysis AA Index, Coding Index, and Agentic Index data from OpenRouter
 - Local creator logos for major model providers with accessible fallbacks
 - Cheap and frontier model segments
-- Workload-based monthly cost estimates
+- Workload-based monthly cost estimates for comparable token-priced models
 - Side-by-side comparison for up to four selected models
 - Paginated model index with full-catalog search, filters, and sorting
 - Cumulative input/output price-movement tracking with refreshed 15-day retention
@@ -66,10 +67,11 @@ Only this authenticated endpoint bypasses the OpenRouter source cache. Public re
 
 - **Blended price:** 75% input price and 25% output price, per one million total tokens.
 - **Cheap:** blended price at or below `CHEAP_MODEL_MAX_PRICE`, defaulting to `$1`.
-- **Frontier:** the top 10 paid OpenRouter models with the highest AA Index.
+- **Frontier:** the top 10 token-priced paid OpenRouter models with the highest AA Index.
 - **Value score:** 75% normalized AA Index and 25% log-price efficiency.
 - **Budget shortlist:** models below the cheap threshold ranked by a 50/50 blend of normalized AA Index and log-price affordability.
 - **Special variants:** free and batch routes appear only in their dedicated model-table tabs and are excluded from paid rankings and recommendations.
+- **Specialized outputs:** non-text output models appear in All paid and a dedicated Specialized tab. Their heterogeneous pricing is not blended, estimated, ranked, or persisted in token-price history.
 
 OpenRouter attaches benchmark scores directly to its model IDs, so no fuzzy model matching is required. Models without an AA Index remain available for pricing but are excluded from frontier and value rankings.
 

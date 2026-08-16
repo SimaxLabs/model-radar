@@ -28,6 +28,12 @@ export interface OpenRouterModel {
   pricing: {
     prompt: string;
     completion: string;
+    request?: string;
+    image?: string;
+    image_output?: string;
+    image_token?: string;
+    audio?: string;
+    audio_output?: string;
   };
   top_provider?: {
     max_completion_tokens: number | null;
@@ -41,7 +47,19 @@ export interface OpenRouterModel {
   };
 }
 
-export type ModelSegment = "state-of-the-art" | "cheap" | "standard" | "free" | "batch";
+export type ModelSegment = "state-of-the-art" | "cheap" | "standard" | "specialized" | "free" | "batch";
+export type PricingBasis = "token" | "specialized";
+
+export interface SpecializedRate {
+  label: string;
+  price: number;
+  unit: "1M text tokens" | "1M audio tokens" | "1M image tokens" | "input image" | "output image" | "request";
+}
+
+export interface SpecializedPricing {
+  input: SpecializedRate[];
+  output: SpecializedRate[];
+}
 
 export interface RadarModel {
   id: string;
@@ -51,11 +69,13 @@ export interface RadarModel {
   inputModalities: string[];
   outputModalities: string[];
   maxCompletionTokens: number | null;
+  pricingBasis: PricingBasis;
+  specializedPricing: SpecializedPricing | null;
   createdAt: string;
   expiresAt: string | null;
-  inputPrice: number;
-  outputPrice: number;
-  blendedPrice: number;
+  inputPrice: number | null;
+  outputPrice: number | null;
+  blendedPrice: number | null;
   previousInputPrice: number | null;
   previousOutputPrice: number | null;
   priceChangeBaselineAt: string | null;
@@ -74,6 +94,7 @@ export interface RadarModel {
 
 export interface RadarSummary {
   paidModels: number;
+  specializedModels: number;
   freeModels: number;
   batchModels: number;
   rankedModels: number;

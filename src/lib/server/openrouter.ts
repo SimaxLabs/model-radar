@@ -1,6 +1,6 @@
 import type { OpenRouterModel } from "$lib/types";
 
-const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models";
+const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models?output_modalities=all";
 const CACHE_TTL = 60 * 60 * 1000;
 
 interface OpenRouterResponse {
@@ -21,10 +21,12 @@ function isValidModel(model: unknown): model is OpenRouterModel {
     typeof candidate.created === "number" &&
     !!candidate.architecture &&
     Array.isArray(candidate.architecture.input_modalities) &&
+    candidate.architecture.input_modalities.length > 0 &&
     candidate.architecture.input_modalities.every(
       (modality) => typeof modality === "string" && modality.length > 0,
     ) &&
     Array.isArray(candidate.architecture.output_modalities) &&
+    candidate.architecture.output_modalities.length > 0 &&
     candidate.architecture.output_modalities.every(
       (modality) => typeof modality === "string" && modality.length > 0,
     ) &&
@@ -53,12 +55,18 @@ async function requestModels() {
     const inputPrice = Number(model.pricing.prompt);
     const outputPrice = Number(model.pricing.completion);
     const isFreeVariant = model.id.endsWith(":free");
+    const isBatchVariant = model.id.endsWith(":batch");
+    const isSpecializedOutput = model.architecture.output_modalities.some(
+      (modality) => modality.toLowerCase() !== "text",
+    );
+    if (!Number.isFinite(inputPrice) || !Number.isFinite(outputPrice)) return false;
+    if (inputPrice < 0 || outputPrice < 0) return false;
     return (
       model.id !== "openrouter/free" &&
-      Number.isFinite(inputPrice) &&
-      Number.isFinite(outputPrice) &&
-      ((isFreeVariant && inputPrice === 0 && outputPrice === 0) ||
-        (!isFreeVariant && inputPrice > 0 && outputPrice > 0))
+      ((isFreeVariant && !isSpecializedOutput && inputPrice === 0 && outputPrice === 0) ||
+        (isBatchVariant && !isSpecializedOutput && inputPrice > 0 && outputPrice > 0) ||
+        (!isFreeVariant && !isBatchVariant && isSpecializedOutput) ||
+        (!isFreeVariant && !isBatchVariant && !isSpecializedOutput && inputPrice > 0 && outputPrice > 0))
     );
   });
 

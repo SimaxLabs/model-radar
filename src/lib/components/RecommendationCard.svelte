@@ -54,8 +54,8 @@
                 </div>
               </td>
               <td>{formatTokenCount(model.contextLength)}</td>
-              <td>{formatPrice(model.inputPrice)}</td>
-              <td>{formatPrice(model.outputPrice)}</td>
+              <td>{model.inputPrice === null ? "-" : formatPrice(model.inputPrice)}</td>
+              <td>{model.outputPrice === null ? "-" : formatPrice(model.outputPrice)}</td>
             </tr>
           {/each}
         </tbody>
@@ -70,8 +70,8 @@
             </div>
             <dl>
               <div><dt>Context</dt><dd>{formatTokenCount(model.contextLength)}</dd></div>
-              <div><dt>Input / 1M</dt><dd>{formatPrice(model.inputPrice)}</dd></div>
-              <div><dt>Output / 1M</dt><dd>{formatPrice(model.outputPrice)}</dd></div>
+              <div><dt>Input / 1M</dt><dd>{model.inputPrice === null ? "-" : formatPrice(model.inputPrice)}</dd></div>
+              <div><dt>Output / 1M</dt><dd>{model.outputPrice === null ? "-" : formatPrice(model.outputPrice)}</dd></div>
             </dl>
           </li>
         {/each}

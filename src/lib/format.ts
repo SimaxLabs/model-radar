@@ -11,6 +11,12 @@ const preciseMoney = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 4,
 });
+const unitMoney = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 8,
+});
 const PROVIDER_LABELS: Readonly<Record<string, string>> = {
   alibaba: "Alibaba",
   amazon: "Amazon",
@@ -49,6 +55,10 @@ export function formatTokenCount(value: number) {
 
 export function formatPrice(value: number) {
   return value < 0.01 ? preciseMoney.format(value) : money.format(value);
+}
+
+export function formatUnitPrice(value: number) {
+  return unitMoney.format(value);
 }
 
 export function displayModelName(name: string) {

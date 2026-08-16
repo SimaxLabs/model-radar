@@ -16,6 +16,8 @@ function radarModel(
     inputModalities: ["text"],
     outputModalities: ["text"],
     maxCompletionTokens: 8_192,
+    pricingBasis: "token",
+    specializedPricing: null,
     createdAt: "2026-01-01T00:00:00.000Z",
     expiresAt: null,
     inputPrice: blendedPrice,

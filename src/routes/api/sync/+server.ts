@@ -33,6 +33,7 @@ export const POST: RequestHandler = async ({ getClientAddress, request, setHeade
         syncedAt: data.generatedAt,
         snapshotDate: data.snapshotDate,
         paidModels: data.summary.paidModels,
+        specializedModels: data.summary.specializedModels,
         rankedModels: data.summary.rankedModels,
       },
       { headers: { "Cache-Control": "no-store" } },

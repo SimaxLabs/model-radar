@@ -2,6 +2,7 @@
   import { ExternalLink, X } from "@lucide/svelte";
   import { displayModelName, formatChange, formatPrice, formatTokenCount, money } from "$lib/format";
   import type { RadarModel } from "$lib/types";
+  import ModelModalities from "$lib/components/ModelModalities.svelte";
 
   type ComparisonMetric = {
     label: string;
@@ -26,8 +27,8 @@
   const capabilityMetrics: ComparisonMetric[] = [
     {
       label: "Context window",
-      value: (model) => model.contextLength,
-      display: (model) => formatTokenCount(model.contextLength),
+      value: (model) => model.contextLength > 0 ? model.contextLength : null,
+      display: (model) => model.contextLength > 0 ? formatTokenCount(model.contextLength) : "N/A",
       preference: "high",
     },
     {
@@ -59,30 +60,33 @@
     {
       label: "Input / 1M",
       value: (model) => model.inputPrice,
-      display: (model) => formatPrice(model.inputPrice),
+      display: (model) => model.inputPrice === null ? "N/A" : formatPrice(model.inputPrice),
       preference: "low",
     },
     {
       label: "Output / 1M",
       value: (model) => model.outputPrice,
-      display: (model) => formatPrice(model.outputPrice),
+      display: (model) => model.outputPrice === null ? "N/A" : formatPrice(model.outputPrice),
       preference: "low",
     },
     {
       label: "Your monthly",
       value: monthlyCost,
-      display: (model) => money.format(monthlyCost(model)),
+      display: (model) => {
+        const cost = monthlyCost(model);
+        return cost === null ? "N/A" : money.format(cost);
+      },
       preference: "low",
     },
     {
       label: "Input move",
       value: (model) => model.inputPriceChangePercent,
-      display: (model) => formatChange(model.inputPriceChangePercent),
+      display: (model) => model.pricingBasis === "specialized" ? "N/A" : formatChange(model.inputPriceChangePercent),
     },
     {
       label: "Output move",
       value: (model) => model.outputPriceChangePercent,
-      display: (model) => formatChange(model.outputPriceChangePercent),
+      display: (model) => model.pricingBasis === "specialized" ? "N/A" : formatChange(model.outputPriceChangePercent),
     },
   ];
   const metricGroups = [
@@ -96,7 +100,9 @@
   });
 
   function monthlyCost(model: RadarModel) {
-    return model.inputPrice * inputMillions + model.outputPrice * outputMillions;
+    return model.inputPrice === null || model.outputPrice === null
+      ? null
+      : model.inputPrice * inputMillions + model.outputPrice * outputMillions;
   }
 
   function isBest(metric: ComparisonMetric, model: RadarModel) {
@@ -105,7 +111,7 @@
     if (value === null) return false;
     const values = models
       .map((candidate) => metric.value(candidate))
-      .filter((candidate): candidate is number => candidate !== null);
+      .filter((candidate): candidate is number => candidate !== null && Number.isFinite(candidate));
     if (new Set(values).size < 2) return false;
     const best = metric.preference === "high" ? Math.max(...values) : Math.min(...values);
     return value === best;
@@ -123,7 +129,7 @@
     <div>
       <span class="section-kicker">SIDE-BY-SIDE</span>
       <h2>Model comparison</h2>
-      <p>{inputMillions}M input + {outputMillions}M output tokens per month</p>
+      <p>{inputMillions}M input + {outputMillions}M output tokens per month where token pricing applies</p>
     </div>
     <button class="comparison-close" onclick={onclose} aria-label="Close comparison"><X size={18} /></button>
   </header>
@@ -138,6 +144,7 @@
               <div class="comparison-model">
                 <strong title={displayModelName(model.name)}>{displayModelName(model.name)}</strong>
               </div>
+              <div class="comparison-modalities"><ModelModalities inputModalities={model.inputModalities} outputModalities={model.outputModalities} /></div>
               <a href={`https://openrouter.ai/${model.id}`} target="_blank" rel="noreferrer">OpenRouter <ExternalLink size={11} /></a>
             </th>
           {/each}
@@ -167,6 +174,7 @@
           <div class="comparison-card-heading">
             <div>
               <strong>{displayModelName(model.name)}</strong>
+              <div class="comparison-modalities"><ModelModalities inputModalities={model.inputModalities} outputModalities={model.outputModalities} /></div>
               <a href={`https://openrouter.ai/${model.id}`} target="_blank" rel="noreferrer">OpenRouter <ExternalLink size={11} /></a>
             </div>
           </div>

@@ -19,8 +19,9 @@
 ## Data Rules
 
 - OpenRouter is the sole upstream source for pricing and embedded Artificial Analysis benchmark indices. Artificial Analysis must remain attributed in the UI.
-- Free `:free` variants and paid `:batch` variants are isolated in dedicated model-table tabs. The generic free router and other zero-priced or dynamic/negative-priced routes remain excluded in `src/lib/server/openrouter.ts`.
-- The documented blend is 75% input plus 25% output. `CHEAP_MODEL_MAX_PRICE` defaults to `$1/M`; frontier means the top 10 paid models by AA Index; value is 75% AA Index and 25% log-price efficiency; budget recommendations use 50% AA Index and 50% log-price affordability among cheap models.
+- Free `:free` variants and paid `:batch` variants are isolated in dedicated model-table tabs. The generic free router and zero-priced text or dynamic/negative-priced routes remain excluded in `src/lib/server/openrouter.ts`; non-text output models may have zero generic token fields and remain available as specialized models.
+- Specialized image, audio, video, embedding, and other non-text output models appear in All paid and the dedicated Specialized tab. Never blend, rank, estimate, or persist their heterogeneous prices as token prices.
+- The documented blend is 75% input plus 25% output. `CHEAP_MODEL_MAX_PRICE` defaults to `$1/M`; frontier means the top 10 token-priced paid models by AA Index; value is 75% AA Index and 25% log-price efficiency; budget recommendations use 50% AA Index and 50% log-price affordability among cheap models.
 - Benchmark indices are attached directly to OpenRouter model IDs. Models without an AA Index remain unranked; do not scrape or fabricate missing scores.
 
 ## Caching And Sync

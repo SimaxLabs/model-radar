@@ -7,37 +7,43 @@ afterEach(() => {
 
 describe("OpenRouter models", () => {
   it("preserves embedded Artificial Analysis benchmark indices", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () =>
-        new Response(
-          JSON.stringify({
-            data: [
-              {
-                id: "example/model",
-                canonical_slug: "example/model-2026-01-01",
-                name: "Example: Model",
-                context_length: 128_000,
-                created: 1_700_000_000,
-                expiration_date: null,
-                architecture: {
-                  input_modalities: ["text", "image"],
-                  output_modalities: ["text", "audio"],
-                },
-                pricing: { prompt: "0.000001", completion: "0.000005" },
-                benchmarks: {
-                  artificial_analysis: {
-                    intelligence_index: 72.4,
-                    coding_index: 68.1,
-                    agentic_index: 61.5,
-                  },
+    const fetchMock = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          data: [
+            {
+              id: "example/model",
+              canonical_slug: "example/model-2026-01-01",
+              name: "Example: Model",
+              context_length: 128_000,
+              created: 1_700_000_000,
+              expiration_date: null,
+              architecture: {
+                input_modalities: ["text", "image"],
+                output_modalities: ["text", "audio"],
+              },
+              pricing: {
+                prompt: "0.000001",
+                completion: "0.000005",
+                audio: "0.000032",
+                audio_output: "0.000064",
+              },
+              benchmarks: {
+                artificial_analysis: {
+                  intelligence_index: 72.4,
+                  coding_index: 68.1,
+                  agentic_index: 61.5,
                 },
               },
-            ],
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        ),
+            },
+          ],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
       ),
+    );
+    vi.stubGlobal(
+      "fetch",
+      fetchMock,
     );
 
     const models = await fetchOpenRouterModels(true);
@@ -51,6 +57,11 @@ describe("OpenRouter models", () => {
       input_modalities: ["text", "image"],
       output_modalities: ["text", "audio"],
     });
+    expect(models[0]?.pricing.audio_output).toBe("0.000064");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://openrouter.ai/api/v1/models?output_modalities=all",
+      expect.any(Object),
+    );
   });
 
   it("keeps free and batch variants while excluding other zero-priced routes", async () => {
@@ -98,6 +109,22 @@ describe("OpenRouter models", () => {
                   output_modalities: ["text"],
                 },
                 pricing: { prompt: "0", completion: "0" },
+              },
+              {
+                id: "example/image-model",
+                canonical_slug: "example/image-model",
+                name: "Example: Image Model",
+                context_length: 32_000,
+                created: 1_700_000_000,
+                expiration_date: null,
+                architecture: {
+                  input_modalities: ["text", "image"],
+                  output_modalities: ["image"],
+                },
+                pricing: {
+                  prompt: "0",
+                  completion: "0",
+                },
               },
               {
                 id: "example/invalid-architecture",
@@ -151,6 +178,7 @@ describe("OpenRouter models", () => {
       "example/model",
       "example/model:batch",
       "example/model:free",
+      "example/image-model",
     ]);
   });
 });

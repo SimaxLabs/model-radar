@@ -2,8 +2,19 @@ import { env } from "$env/dynamic/private";
 import { getDatabase } from "$lib/server/db/client";
 import { syncPriceHistory } from "$lib/server/db/snapshots";
 import { fetchOpenRouterModels } from "$lib/server/openrouter";
-import { calculateBlendedPrice, calculatePriceChange } from "$lib/scoring";
-import type { RadarData, RadarModel } from "$lib/types";
+import {
+  calculateBlendedPrice,
+  calculatePriceChange,
+  hasTokenPricing,
+  type TokenPricedModel,
+} from "$lib/scoring";
+import type {
+  OpenRouterModel,
+  RadarData,
+  RadarModel,
+  SpecializedPricing,
+  SpecializedRate,
+} from "$lib/types";
 
 const MILLION = 1_000_000;
 const STATE_OF_THE_ART_COUNT = 10;
@@ -25,9 +36,9 @@ function scale(value: number, min: number, max: number) {
   return max === min ? 1 : clamp((value - min) / (max - min));
 }
 
-function addValueScores(models: RadarModel[]) {
+function addValueScores(models: TokenPricedModel[]) {
   const ranked = models.filter(
-    (model): model is RadarModel & { intelligence: number } => model.intelligence !== null,
+    (model): model is TokenPricedModel & { intelligence: number } => model.intelligence !== null,
   );
   if (ranked.length === 0) return;
 
@@ -49,6 +60,58 @@ function finiteScore(value: number | null | undefined) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function positivePrice(value: string | undefined) {
+  const price = Number(value);
+  return Number.isFinite(price) && price > 0 ? price : null;
+}
+
+function getSpecializedPricing(model: OpenRouterModel): SpecializedPricing {
+  const input: SpecializedRate[] = [];
+  const output: SpecializedRate[] = [];
+  const dedicatedDurationOutput = model.architecture.output_modalities.some(
+    (modality) => modality === "speech" || modality === "transcription",
+  );
+  const prompt = positivePrice(model.pricing.prompt);
+  const completion = positivePrice(model.pricing.completion);
+  const audio = positivePrice(model.pricing.audio);
+  const audioOutput = positivePrice(model.pricing.audio_output);
+  const image = positivePrice(model.pricing.image);
+  const imageToken = positivePrice(model.pricing.image_token);
+  const imageOutput = positivePrice(model.pricing.image_output);
+  const request = positivePrice(model.pricing.request);
+
+  if (prompt !== null && !dedicatedDurationOutput) {
+    input.push({ label: "Text", price: prompt * MILLION, unit: "1M text tokens" });
+  }
+  if (audio !== null) {
+    input.push({ label: "Audio", price: audio * MILLION, unit: "1M audio tokens" });
+  }
+  if (image !== null) {
+    input.push({ label: "Image", price: image, unit: "input image" });
+  }
+  if (request !== null) {
+    input.push({ label: "Request", price: request, unit: "request" });
+  }
+  if (completion !== null) {
+    output.push({ label: "Text", price: completion * MILLION, unit: "1M text tokens" });
+  }
+  if (audioOutput !== null) {
+    output.push({ label: "Audio", price: audioOutput * MILLION, unit: "1M audio tokens" });
+  }
+  if (imageToken !== null && imageOutput === imageToken) {
+    output.push({ label: "Image", price: imageToken * MILLION, unit: "1M image tokens" });
+  } else {
+    if (imageToken !== null) {
+      output.push({ label: "Image", price: imageToken * MILLION, unit: "1M image tokens" });
+    }
+    if (imageOutput !== null) {
+      output.push({ label: "Image", price: imageOutput, unit: "output image" });
+    }
+  }
+
+  return { input, output };
+}
+
 async function buildRadarData(force: boolean): Promise<RadarData> {
   const capturedAt = new Date();
   const generatedAt = capturedAt.toISOString();
@@ -59,12 +122,21 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
   let databaseStatus: RadarData["sources"]["database"];
 
   const models: RadarModel[] = openRouterModels.map((model) => {
-    const inputPrice = Number(model.pricing.prompt) * MILLION;
-    const outputPrice = Number(model.pricing.completion) * MILLION;
-    const blendedPrice = calculateBlendedPrice(inputPrice, outputPrice);
+    const rawInputPrice = Number(model.pricing.prompt) * MILLION;
+    const rawOutputPrice = Number(model.pricing.completion) * MILLION;
+    const isSpecializedOutput = model.architecture.output_modalities.some(
+      (modality) => modality.toLowerCase() !== "text",
+    );
+    const pricingBasis = isSpecializedOutput ? "specialized" : "token";
+    const inputPrice = pricingBasis === "token" ? rawInputPrice : null;
+    const outputPrice = pricingBasis === "token" ? rawOutputPrice : null;
+    const blendedPrice = inputPrice === null || outputPrice === null
+      ? null
+      : calculateBlendedPrice(inputPrice, outputPrice);
     const isFree = model.id.endsWith(":free");
     const isBatch = model.id.endsWith(":batch");
-    const isCheap = !isFree && !isBatch && blendedPrice <= cheapThreshold;
+    const isSpecialized = !isFree && !isBatch && pricingBasis === "specialized";
+    const isCheap = !isFree && !isBatch && blendedPrice !== null && blendedPrice <= cheapThreshold;
     const benchmarks = model.benchmarks?.artificial_analysis;
 
     return {
@@ -75,6 +147,8 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       inputModalities: [...model.architecture.input_modalities],
       outputModalities: [...model.architecture.output_modalities],
       maxCompletionTokens: finiteScore(model.top_provider?.max_completion_tokens),
+      pricingBasis,
+      specializedPricing: pricingBasis === "specialized" ? getSpecializedPricing(model) : null,
       createdAt: new Date(model.created * 1000).toISOString(),
       expiresAt: model.expiration_date ?? null,
       inputPrice,
@@ -90,7 +164,7 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       coding: finiteScore(benchmarks?.coding_index),
       agentic: finiteScore(benchmarks?.agentic_index),
       intelligenceRank: null,
-      segment: isFree ? "free" : isBatch ? "batch" : isCheap ? "cheap" : "standard",
+      segment: isFree ? "free" : isBatch ? "batch" : isSpecialized ? "specialized" : isCheap ? "cheap" : "standard",
       isCheap,
       isStateOfTheArt: false,
       valueScore: null,
@@ -100,8 +174,9 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
   const paidModels = models.filter(
     (model) => model.segment !== "free" && model.segment !== "batch",
   );
-  const rankedModels = paidModels
-    .filter((model): model is RadarModel & { intelligence: number } => model.intelligence !== null)
+  const tokenPricedPaidModels = paidModels.filter(hasTokenPricing);
+  const rankedModels = tokenPricedPaidModels
+    .filter((model): model is TokenPricedModel & { intelligence: number } => model.intelligence !== null)
     .sort((left, right) => right.intelligence - left.intelligence);
 
   for (const [index, model] of rankedModels.entries()) {
@@ -115,8 +190,9 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
   const rankedCount = rankedModels.length;
   try {
     const databaseKind = (await getDatabase()).kind;
+    const priceTrackedModels = models.filter(hasTokenPricing);
     const movements = await syncPriceHistory(
-      models.map((model) => ({
+      priceTrackedModels.map((model) => ({
         modelId: model.id,
         inputPrice: model.inputPrice,
         outputPrice: model.outputPrice,
@@ -126,6 +202,7 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       rankedCount,
     );
     for (const model of models) {
+      if (!hasTokenPricing(model)) continue;
       const movement = movements.get(model.id);
       const baselineInputPrice = movement?.baselineInputPrice ?? null;
       const baselineOutputPrice = movement?.baselineOutputPrice ?? null;
@@ -141,8 +218,8 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       label: databaseKind === "turso" ? "Turso connected" : "Local history",
       detail:
         databaseKind === "turso"
-          ? "Price movements and daily prices are retained for 15 days in Turso."
-          : "Price movements and daily prices are retained for 15 days in local libSQL.",
+          ? "Token-price movements and daily prices are retained for 15 days in Turso."
+          : "Token-price movements and daily prices are retained for 15 days in local libSQL.",
     };
   } catch (error) {
     console.error("Price history sync failed", error);
@@ -153,13 +230,16 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
     };
   }
 
-  addValueScores(paidModels);
+  addValueScores(tokenPricedPaidModels);
   models.sort((left, right) => {
+    if (left.intelligenceRank === null && right.intelligenceRank === null) {
+      return left.name.localeCompare(right.name) || left.id.localeCompare(right.id);
+    }
     if (left.intelligenceRank === null) return 1;
     if (right.intelligenceRank === null) return -1;
     return left.intelligenceRank - right.intelligenceRank;
   });
-  const modelPriceDirections = paidModels.map((model) => {
+  const modelPriceDirections = tokenPricedPaidModels.map((model) => {
     const changes = [model.inputPriceChangePercent, model.outputPriceChangePercent].filter(
       (change): change is number => change !== null && Math.abs(change) >= 0.001,
     );
@@ -178,6 +258,7 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
     models,
     summary: {
       paidModels: paidModels.length,
+      specializedModels: models.filter((model) => model.segment === "specialized").length,
       freeModels: models.filter((model) => model.segment === "free").length,
       batchModels: models.filter((model) => model.segment === "batch").length,
       rankedModels: rankedCount,
@@ -196,7 +277,7 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       openRouter: {
         state: "live",
         label: "Pricing live",
-        detail: "Current model prices from OpenRouter.",
+        detail: "Current token-priced and specialized models from OpenRouter.",
       },
       benchmarks:
         rankedCount > 0
@@ -238,6 +319,7 @@ export function unavailableRadarData(): RadarData {
     models: [],
     summary: {
       paidModels: 0,
+      specializedModels: 0,
       freeModels: 0,
       batchModels: 0,
       rankedModels: 0,
