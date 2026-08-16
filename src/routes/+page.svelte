@@ -21,6 +21,7 @@
     Shapes,
     X,
   } from "@lucide/svelte";
+  import CapabilityFilter from "$lib/components/CapabilityFilter.svelte";
   import ModelComparison from "$lib/components/ModelComparison.svelte";
   import ModelDetail from "$lib/components/ModelDetail.svelte";
   import ModelModalities from "$lib/components/ModelModalities.svelte";
@@ -41,6 +42,7 @@
   const COMPARISON_MIN = 2;
   const COMPARISON_LIMIT = 4;
   const PAGE_SIZE = 25;
+  const MODALITY_ORDER = ["text", "image", "file", "audio", "video", "embeddings", "rerank", "speech", "transcription"];
   const articleDate = new Intl.DateTimeFormat("en", {
     month: "short",
     day: "numeric",
@@ -55,6 +57,8 @@
   let sort = $state<Sort>("intelligence");
   let sortDirection = $state<SortDirection>("desc");
   let search = $state("");
+  let inputCapability = $state("all");
+  let outputCapability = $state("all");
   let pageNumber = $state(1);
   let modelTable: HTMLDivElement;
   let inputMillions = $state(10);
@@ -72,6 +76,12 @@
     comparisonIds
       .map((modelId) => radar.models.find((model) => model.id === modelId))
       .filter((model): model is RadarModel => model !== undefined),
+  );
+  let inputCapabilities = $derived.by(() =>
+    [...new Set(radar.models.flatMap((model) => model.inputModalities))].sort(compareModalities),
+  );
+  let outputCapabilities = $derived.by(() =>
+    [...new Set(radar.models.flatMap((model) => model.outputModalities))].sort(compareModalities),
   );
   let tokenPricedModels = $derived(
     radar.models.filter(
@@ -134,6 +144,15 @@
     return value > 0 ? formatTokenCount(value) : "Not applicable";
   }
 
+  function compareModalities(left: string, right: string) {
+    const leftIndex = MODALITY_ORDER.indexOf(left);
+    const rightIndex = MODALITY_ORDER.indexOf(right);
+    if (leftIndex === -1 && rightIndex === -1) return left.localeCompare(right);
+    if (leftIndex === -1) return 1;
+    if (rightIndex === -1) return -1;
+    return leftIndex - rightIndex;
+  }
+
   function monthlyCost(model: RadarModel) {
     return hasTokenPricing(model)
       ? model.inputPrice * safeInputMillions + model.outputPrice * safeOutputMillions
@@ -150,6 +169,8 @@
         if (filter === "free" && model.segment !== "free") return false;
         if (filter === "batch" && model.segment !== "batch") return false;
         if (filter === "specialized" && model.segment !== "specialized") return false;
+        if (inputCapability !== "all" && !model.inputModalities.includes(inputCapability)) return false;
+        if (outputCapability !== "all" && !model.outputModalities.includes(outputCapability)) return false;
         return !query || `${model.name} ${model.provider} ${model.id}`.toLowerCase().includes(query);
       })
       .sort((left, right) => {
@@ -204,6 +225,26 @@
     } else if (filter === "search") {
       filter = "all";
     }
+  }
+
+  function capabilityFiltersChanged() {
+    pageNumber = 1;
+  }
+
+  function selectInputCapability(value: string) {
+    inputCapability = value;
+    capabilityFiltersChanged();
+  }
+
+  function selectOutputCapability(value: string) {
+    outputCapability = value;
+    capabilityFiltersChanged();
+  }
+
+  function clearCapabilityFilters() {
+    inputCapability = "all";
+    outputCapability = "all";
+    pageNumber = 1;
   }
 
   function selectFilter(nextFilter: Filter) {
@@ -291,6 +332,8 @@
       if (!response.ok) throw new Error(payload.error || "Refresh failed");
       refreshedRadar = payload;
       pageNumber = 1;
+      if (inputCapability !== "all" && !payload.models.some((model) => model.inputModalities.includes(inputCapability))) inputCapability = "all";
+      if (outputCapability !== "all" && !payload.models.some((model) => model.outputModalities.includes(outputCapability))) outputCapability = "all";
       comparisonIds = comparisonIds.filter((modelId) =>
         payload.models.some((model) => model.id === modelId),
       );
@@ -445,6 +488,13 @@
           </div>
           <div class="model-tools">
             <label class="search-box"><Search size={16} /><input bind:value={search} oninput={searchAllModels} placeholder="Search every category" aria-label="Search every model category" /></label>
+            <div class="capability-filter-controls" aria-label="Model capability filters">
+              <CapabilityFilter label="Input" modalities={inputCapabilities} value={inputCapability} tone="input" onselect={selectInputCapability} />
+              <CapabilityFilter label="Output" modalities={outputCapabilities} value={outputCapability} tone="output" onselect={selectOutputCapability} />
+              {#if inputCapability !== "all" || outputCapability !== "all"}
+                <button class="capability-filter-clear" type="button" onclick={clearCapabilityFilters} aria-label="Clear capability filters" title="Clear capability filters"><X size={13} /></button>
+              {/if}
+            </div>
           </div>
         </div>
         <div class="filter-row" aria-label="Model filters">

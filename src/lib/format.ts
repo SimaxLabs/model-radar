@@ -65,6 +65,12 @@ export function displayModelName(name: string) {
   return name.match(/^[^:]+:\s*(.+)$/)?.[1] ?? name;
 }
 
+export function displayModalityName(modality: string) {
+  return modality
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
 export function providerName(provider: string) {
   const normalizedProvider = provider.replace(/^~/, "");
   return (
