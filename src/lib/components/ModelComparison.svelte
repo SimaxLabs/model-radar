@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ExternalLink, X } from "@lucide/svelte";
-  import { formatChange, formatPrice, money } from "$lib/format";
+  import { formatChange, formatPrice, formatTokenCount, money } from "$lib/format";
   import type { RadarModel } from "$lib/types";
 
   type ComparisonMetric = {
@@ -26,6 +26,12 @@
 
   let dialog: HTMLDialogElement;
   const capabilityMetrics: ComparisonMetric[] = [
+    {
+      label: "Context window",
+      value: (model) => model.contextLength,
+      display: (model) => formatTokenCount(model.contextLength),
+      preference: "high",
+    },
     {
       label: "AA Index",
       value: (model) => model.intelligence,
@@ -125,12 +131,12 @@
   </header>
 
   <div class="comparison-scroll">
-    <table class="comparison-table">
+    <table class="comparison-table" aria-label="Model comparison">
       <thead>
         <tr>
-          <th>Signal</th>
+          <th scope="col">Signal</th>
           {#each models as model (model.id)}
-            <th>
+            <th scope="col">
               <div class="comparison-model">
                  <div>
                    <strong title={model.name}>{model.name}</strong>
@@ -147,7 +153,7 @@
           <tr class="comparison-group"><th colspan={models.length + 1}>{group.label}</th></tr>
           {#each group.metrics as metric (metric.label)}
             <tr>
-              <th>{metric.label}</th>
+              <th scope="row">{metric.label}</th>
               {#each models as model (model.id)}
                 {@const best = isBest(metric, model)}
                 <td class:comparison-best={best}>
@@ -160,5 +166,32 @@
         {/each}
       </tbody>
     </table>
+    <div class="comparison-cards">
+      {#each models as model (model.id)}
+        <article class="comparison-card">
+          <div class="comparison-card-heading">
+            <div>
+              <strong>{model.name}</strong>
+              <a href={`https://openrouter.ai/${model.id}`} target="_blank" rel="noreferrer">OpenRouter <ExternalLink size={11} /></a>
+            </div>
+            <button onclick={() => onremove(model.id)} aria-label={`Remove ${model.name} from comparison`}><X size={14} /></button>
+          </div>
+          {#each metricGroups as group (group.label)}
+            <section>
+              <h3>{group.label}</h3>
+              <dl>
+                {#each group.metrics as metric (metric.label)}
+                  {@const best = isBest(metric, model)}
+                  <div class:comparison-best={best}>
+                    <dt>{metric.label}</dt>
+                    <dd><strong>{metric.display(model)}</strong>{#if best}<span>Best</span>{/if}</dd>
+                  </div>
+                {/each}
+              </dl>
+            </section>
+          {/each}
+        </article>
+      {/each}
+    </div>
   </div>
 </dialog>

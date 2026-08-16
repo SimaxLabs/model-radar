@@ -40,8 +40,12 @@ const PROVIDER_LABELS: Readonly<Record<string, string>> = {
 
 export const compactNumber = new Intl.NumberFormat("en-US", {
   notation: "compact",
-  maximumFractionDigits: 0,
+  maximumFractionDigits: 1,
 });
+
+export function formatTokenCount(value: number) {
+  return compactNumber.format(value);
+}
 
 export function formatPrice(value: number) {
   return value < 0.01 ? preciseMoney.format(value) : money.format(value);

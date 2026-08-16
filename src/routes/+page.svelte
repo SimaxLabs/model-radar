@@ -27,7 +27,7 @@
   import ProviderLogo from "$lib/components/ProviderLogo.svelte";
   import RecommendationCard from "$lib/components/RecommendationCard.svelte";
   import SourcePill from "$lib/components/SourcePill.svelte";
-  import { formatPrice, formatSyncTime, money } from "$lib/format";
+  import { formatPrice, formatSyncTime, formatTokenCount, money } from "$lib/format";
   import { rankBudgetModels } from "$lib/scoring";
   import type { RadarData, RadarModel } from "$lib/types";
   import type { PageData } from "./$types";
@@ -39,10 +39,6 @@
   const COMPARISON_MIN = 2;
   const COMPARISON_LIMIT = 4;
   const PAGE_SIZE = 25;
-  const tokenLimit = new Intl.NumberFormat("en", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  });
   const articleDate = new Intl.DateTimeFormat("en", {
     month: "short",
     day: "numeric",
@@ -124,7 +120,7 @@
   }
 
   function formatTokenLimit(value: number | null) {
-    return value === null ? "Not published" : tokenLimit.format(value);
+    return value === null ? "Not published" : formatTokenCount(value);
   }
 
   let matchingModels = $derived.by(() => {
@@ -212,6 +208,13 @@
     pageNumber = 1;
   }
 
+  function changeSort(event: Event) {
+    const nextSort = (event.currentTarget as HTMLSelectElement).value as Sort;
+    sort = nextSort;
+    sortDirection = defaultSortDirection(nextSort);
+    pageNumber = 1;
+  }
+
   function goToPage(nextPage: number) {
     pageNumber = Math.min(totalPages, Math.max(1, nextPage));
     requestAnimationFrame(() => modelTable.scrollIntoView({ block: "start" }));
@@ -281,9 +284,9 @@
         <a class="topbar-brand" href="#top" aria-label="Model Radar" onclick={() => activeSection = "radar"}><img class="brand-icon" src={`${base}/model-radar.svg`} alt="" /><span>Model Radar</span></a>
       </div>
       <nav class="topbar-nav" aria-label="Dashboard navigation">
-        <a class:active={activeSection === "radar"} href="#radar" onclick={() => activeSection = "radar"}><Gauge size={16} /><span>Overview</span></a>
-        <a class:active={activeSection === "news"} href="#news" onclick={() => activeSection = "news"}><Newspaper size={16} /><span>News</span></a>
-        <a class:active={activeSection === "models"} href="#models" onclick={() => activeSection = "models"}><Database size={16} /><span>Models</span></a>
+        <a class:active={activeSection === "radar"} href="#radar" aria-label="Overview" onclick={() => activeSection = "radar"}><Gauge size={16} /><span>Overview</span></a>
+        <a class:active={activeSection === "news"} href="#news" aria-label="News" onclick={() => activeSection = "news"}><Newspaper size={16} /><span>News</span></a>
+        <a class:active={activeSection === "models"} href="#models" aria-label="Models" onclick={() => activeSection = "models"}><Database size={16} /><span>Models</span></a>
       </nav>
       <div class="topbar-actions">
         <details class="source-menu">
@@ -365,8 +368,8 @@
 
       <section class="dashboard-section recommendations-section" aria-label="Top model recommendations">
         <div class="recommendation-grid">
-          <RecommendationCard eyebrow="BEST CAPABILITY" method="Paid OpenRouter models with an AA Index are sorted from highest to lowest. The five highest-ranked models are shown." models={topQuality} tone="ink" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} onselect={(model) => selectedModel = model} />
-          <RecommendationCard eyebrow="BEST UNDER BUDGET" method={`Paid models at or below ${money.format(radar.summary.cheapThreshold)} blended per 1M tokens are scored within the cheap set: 50% normalized AA Index and 50% log-price affordability. The five highest scores are shown.`} models={topBudget} tone="lime" inputMillions={safeInputMillions} outputMillions={safeOutputMillions} onselect={(model) => selectedModel = model} />
+          <RecommendationCard eyebrow="BEST CAPABILITY" method="Paid OpenRouter models with an AA Index are sorted from highest to lowest. The five highest-ranked models are shown." models={topQuality} tone="ink" onselect={(model) => selectedModel = model} />
+          <RecommendationCard eyebrow="BEST UNDER BUDGET" method={`Paid models at or below ${money.format(radar.summary.cheapThreshold)} blended per 1M tokens are scored within the cheap set: 50% normalized AA Index and 50% log-price affordability. The five highest scores are shown.`} models={topBudget} tone="lime" onselect={(model) => selectedModel = model} />
         </div>
       </section>
 
@@ -429,11 +432,33 @@
           </div>
         {/if}
 
+        <div class="mobile-sort">
+          <label>
+            <span>Sort by</span>
+            <select value={sort} onchange={changeSort}>
+              <option value="intelligence">AA Index</option>
+              {#if filter !== "free"}
+                <option value="input">Input price</option>
+                <option value="output">Output price</option>
+              {/if}
+              {#if filter === "changed"}
+                <option value="changed">Price move recorded</option>
+              {:else if filter !== "free"}
+                <option value="monthly">Monthly estimate</option>
+              {/if}
+            </select>
+          </label>
+          <button type="button" onclick={() => toggleSort(sort)} aria-label={`Sort ${sortDirection === "asc" ? "descending" : "ascending"}`}>
+            {#if sortDirection === "asc"}<ArrowUp size={15} />Ascending{:else}<ArrowDown size={15} />Descending{/if}
+          </button>
+        </div>
+
         <div class="table-wrap" bind:this={modelTable}>
-          <table>
+          <table class="model-table" aria-label="Models">
             <thead>
               <tr>
                 <th class="model-col">Model</th>
+                <th class="context-col">Context</th>
                 <th class="intelligence-col sortable-column" aria-sort={sort === "intelligence" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
                   <button type="button" onclick={() => toggleSort("intelligence")}>
                     AA Index
@@ -504,6 +529,7 @@
                 {@const inComparison = comparisonIds.includes(model.id)}
                 <tr>
                   <td class="model-col"><button class="model-identity" onclick={() => selectedModel = model}><ProviderLogo provider={model.provider} size="small" /><span><strong>{model.name}</strong></span></button></td>
+                  <td class="context-col">{formatTokenCount(model.contextLength)}</td>
                   <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></td>
                   {#if filter === "free"}
                     <td class="limit-col limit-cell"><strong>{formatTokenLimit(model.maxCompletionTokens)}</strong>{#if model.maxCompletionTokens !== null}<span>tokens</span>{/if}</td>
@@ -540,6 +566,57 @@
               {/each}
             </tbody>
           </table>
+          <div class="model-card-list">
+            {#each pageModels as model (model.id)}
+              {@const monthlyCost = model.inputPrice * safeInputMillions + model.outputPrice * safeOutputMillions}
+              {@const inComparison = comparisonIds.includes(model.id)}
+              <article class="model-card">
+                <div class="model-card-heading">
+                  <button class="model-identity" onclick={() => selectedModel = model}>
+                    <ProviderLogo provider={model.provider} size="small" />
+                    <span><strong>{model.name}</strong><small>{model.provider}</small></span>
+                  </button>
+                </div>
+                <dl class="model-card-metrics">
+                  <div><dt>Context window</dt><dd>{formatTokenCount(model.contextLength)}</dd></div>
+                  <div>
+                    <dt>AA Index</dt>
+                    <dd><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></dd>
+                  </div>
+                  {#if filter === "free"}
+                    <div><dt>Max output</dt><dd>{formatTokenLimit(model.maxCompletionTokens)}{#if model.maxCompletionTokens !== null}<small> tokens</small>{/if}</dd></div>
+                    <div><dt>Requests / min</dt><dd>20 <small>shared</small></dd></div>
+                    <div><dt>Requests / day</dt><dd>50 / 1,000 <small>shared</small></dd></div>
+                  {:else}
+                    <div>
+                      <dt>Input / 1M</dt>
+                      <dd><span class="price-with-move"><span>{formatPrice(model.inputPrice)}</span>{#if model.inputPriceChangePercent !== null && Math.abs(model.inputPriceChangePercent) >= 0.001}<PriceChange value={model.inputPriceChangePercent} detail={priceMoveDetail(model, "input")} />{/if}</span></dd>
+                    </div>
+                    <div>
+                      <dt>Output / 1M</dt>
+                      <dd><span class="price-with-move"><span>{formatPrice(model.outputPrice)}</span>{#if model.outputPriceChangePercent !== null && Math.abs(model.outputPriceChangePercent) >= 0.001}<PriceChange value={model.outputPriceChangePercent} detail={priceMoveDetail(model, "output")} />{/if}</span></dd>
+                    </div>
+                  {/if}
+                  {#if filter === "changed"}
+                    <div class="model-card-wide"><dt>Price move recorded</dt><dd>{model.priceChangeRecordedAt ? formatSyncTime(model.priceChangeRecordedAt) : "Unavailable"}</dd></div>
+                  {:else if filter !== "free"}
+                    <div class="model-card-wide model-card-monthly"><dt>Monthly estimate</dt><dd>{money.format(monthlyCost)}</dd></div>
+                  {/if}
+                </dl>
+                <div class="model-card-actions">
+                  <button
+                    class:active={inComparison}
+                    onclick={() => toggleComparison(model.id)}
+                    disabled={!inComparison && comparisonIds.length >= COMPARISON_LIMIT}
+                    aria-pressed={inComparison}
+                  >
+                    {#if inComparison}<Check size={15} />Remove from compare{:else}<Plus size={15} />Add to compare{/if}
+                  </button>
+                  <button onclick={() => selectedModel = model}>Details <ChevronRight size={15} /></button>
+                </div>
+              </article>
+            {/each}
+          </div>
           {#if matchingModels.length === 0}
             <div class="no-results"><Search size={23} /><strong>No models in this view</strong><p>Try another filter or clear your search.</p></div>
           {/if}
