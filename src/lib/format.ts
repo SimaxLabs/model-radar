@@ -51,6 +51,10 @@ export function formatPrice(value: number) {
   return value < 0.01 ? preciseMoney.format(value) : money.format(value);
 }
 
+export function displayModelName(name: string) {
+  return name.match(/^[^:]+:\s*(.+)$/)?.[1] ?? name;
+}
+
 export function providerName(provider: string) {
   const normalizedProvider = provider.replace(/^~/, "");
   return (

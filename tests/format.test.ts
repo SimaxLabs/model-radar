@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatTokenCount, providerName } from "$lib/format";
+import { displayModelName, formatTokenCount, providerName } from "$lib/format";
 
 describe("provider formatting", () => {
   it("normalizes latest-model aliases to the creator name", () => {
@@ -18,5 +18,13 @@ describe("token count formatting", () => {
     expect(formatTokenCount(200_000)).toBe("200K");
     expect(formatTokenCount(1_000_000)).toBe("1M");
     expect(formatTokenCount(1_500_000)).toBe("1.5M");
+  });
+});
+
+describe("model name formatting", () => {
+  it("removes the OpenRouter provider prefix from display names", () => {
+    expect(displayModelName("OpenAI: GPT-5")).toBe("GPT-5");
+    expect(displayModelName("SpaceXAI: Grok 4")).toBe("Grok 4");
+    expect(displayModelName("Claude 4 Sonnet")).toBe("Claude 4 Sonnet");
   });
 });

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ExternalLink, X } from "@lucide/svelte";
-  import { formatChange, formatPrice, formatTokenCount, money } from "$lib/format";
+  import { displayModelName, formatChange, formatPrice, formatTokenCount, money } from "$lib/format";
   import type { RadarModel } from "$lib/types";
 
   type ComparisonMetric = {
@@ -136,7 +136,7 @@
           {#each models as model (model.id)}
             <th scope="col">
               <div class="comparison-model">
-                <strong title={model.name}>{model.name}</strong>
+                <strong title={displayModelName(model.name)}>{displayModelName(model.name)}</strong>
               </div>
               <a href={`https://openrouter.ai/${model.id}`} target="_blank" rel="noreferrer">OpenRouter <ExternalLink size={11} /></a>
             </th>
@@ -166,7 +166,7 @@
         <article class="comparison-card">
           <div class="comparison-card-heading">
             <div>
-              <strong>{model.name}</strong>
+              <strong>{displayModelName(model.name)}</strong>
               <a href={`https://openrouter.ai/${model.id}`} target="_blank" rel="noreferrer">OpenRouter <ExternalLink size={11} /></a>
             </div>
           </div>

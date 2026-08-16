@@ -27,7 +27,7 @@
   import ProviderLogo from "$lib/components/ProviderLogo.svelte";
   import RecommendationCard from "$lib/components/RecommendationCard.svelte";
   import SourcePill from "$lib/components/SourcePill.svelte";
-  import { formatPrice, formatSyncTime, formatTokenCount, money } from "$lib/format";
+  import { displayModelName, formatPrice, formatSyncTime, formatTokenCount, money } from "$lib/format";
   import { rankBudgetModels } from "$lib/scoring";
   import type { RadarData, RadarModel } from "$lib/types";
   import type { PageData } from "./$types";
@@ -528,7 +528,7 @@
                 {@const monthlyCost = model.inputPrice * safeInputMillions + model.outputPrice * safeOutputMillions}
                 {@const inComparison = comparisonIds.includes(model.id)}
                 <tr>
-                  <td class="model-col"><button class="model-identity" onclick={() => selectedModel = model}><ProviderLogo provider={model.provider} size="small" /><span><strong>{model.name}</strong></span></button></td>
+                  <td class="model-col"><button class="model-identity" onclick={() => selectedModel = model}><ProviderLogo provider={model.provider} size="small" /><span><strong>{displayModelName(model.name)}</strong></span></button></td>
                   <td class="context-col">{formatTokenCount(model.contextLength)}</td>
                   <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></td>
                   {#if filter === "free"}
@@ -574,7 +574,7 @@
                 <div class="model-card-heading">
                   <button class="model-identity" onclick={() => selectedModel = model}>
                     <ProviderLogo provider={model.provider} size="small" />
-                    <span><strong>{model.name}</strong><small>{model.provider}</small></span>
+                    <span><strong>{displayModelName(model.name)}</strong></span>
                   </button>
                 </div>
                 <dl class="model-card-metrics">
@@ -652,7 +652,7 @@
       <div class="comparison-tray-title"><Scale size={17} /><strong>Compare</strong><span>{comparisonModels.length}/{COMPARISON_LIMIT}</span></div>
       <div class="comparison-chips">
         {#each comparisonModels as model (model.id)}
-          <button onclick={() => removeComparison(model.id)} title={`Remove ${model.name}`}><span>{model.name}</span><X size={12} /></button>
+          <button onclick={() => removeComparison(model.id)} title={`Remove ${displayModelName(model.name)}`}><span>{displayModelName(model.name)}</span><X size={12} /></button>
         {/each}
       </div>
       <div class="comparison-tray-actions">
