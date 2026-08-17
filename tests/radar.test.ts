@@ -126,4 +126,28 @@ describe("radar model variants", () => {
       1,
     );
   });
+
+  it("reports text-to-speech prompt pricing per character", async () => {
+    mocks.fetchOpenRouterModels.mockResolvedValue([
+      {
+        ...openRouterModel("x-ai/grok-voice-tts-1.0", "0.000015", "0", ["speech"]),
+        architecture: {
+          input_modalities: ["text"],
+          output_modalities: ["speech"],
+        },
+      },
+    ]);
+
+    const radar = await getRadarData(true);
+
+    expect(radar.models[0]).toMatchObject({
+      id: "x-ai/grok-voice-tts-1.0",
+      segment: "specialized",
+      pricingBasis: "specialized",
+      specializedPricing: {
+        input: [{ label: "Text", price: 15, unit: "1M characters" }],
+        output: [],
+      },
+    });
+  });
 });

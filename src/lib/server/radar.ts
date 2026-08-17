@@ -68,9 +68,8 @@ function positivePrice(value: string | undefined) {
 function getSpecializedPricing(model: OpenRouterModel): SpecializedPricing {
   const input: SpecializedRate[] = [];
   const output: SpecializedRate[] = [];
-  const dedicatedDurationOutput = model.architecture.output_modalities.some(
-    (modality) => modality === "speech" || modality === "transcription",
-  );
+  const hasSpeechOutput = model.architecture.output_modalities.includes("speech");
+  const hasTranscriptionOutput = model.architecture.output_modalities.includes("transcription");
   const prompt = positivePrice(model.pricing.prompt);
   const completion = positivePrice(model.pricing.completion);
   const audio = positivePrice(model.pricing.audio);
@@ -80,8 +79,12 @@ function getSpecializedPricing(model: OpenRouterModel): SpecializedPricing {
   const imageOutput = positivePrice(model.pricing.image_output);
   const request = positivePrice(model.pricing.request);
 
-  if (prompt !== null && !dedicatedDurationOutput) {
-    input.push({ label: "Text", price: prompt * MILLION, unit: "1M text tokens" });
+  if (prompt !== null) {
+    if (hasSpeechOutput) {
+      input.push({ label: "Text", price: prompt * MILLION, unit: "1M characters" });
+    } else if (!hasTranscriptionOutput) {
+      input.push({ label: "Text", price: prompt * MILLION, unit: "1M text tokens" });
+    }
   }
   if (audio !== null) {
     input.push({ label: "Audio", price: audio * MILLION, unit: "1M audio tokens" });

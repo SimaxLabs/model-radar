@@ -53,7 +53,7 @@ export type PricingBasis = "token" | "specialized";
 export interface SpecializedRate {
   label: string;
   price: number;
-  unit: "1M text tokens" | "1M audio tokens" | "1M image tokens" | "input image" | "output image" | "request";
+  unit: "1M text tokens" | "1M characters" | "1M audio tokens" | "1M image tokens" | "input image" | "output image" | "request";
 }
 
 export interface SpecializedPricing {
