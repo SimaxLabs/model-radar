@@ -348,7 +348,7 @@
 
 <svelte:head>
   <title>Model Radar</title>
-  <link rel="icon" type="image/svg+xml" href={`${base}/model-radar.svg`} />
+  <link rel="icon" type="image/svg+xml" sizes="any" href={`${base}/favicon.svg`} />
   <meta name="description" content="Track OpenRouter model prices and compare them with independent Artificial Analysis intelligence benchmarks." />
 </svelte:head>
 
