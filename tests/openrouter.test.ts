@@ -62,6 +62,56 @@ describe("OpenRouter models", () => {
       "https://openrouter.ai/api/v1/models?output_modalities=all",
       expect.any(Object),
     );
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://openrouter.ai/api/v1/videos/models",
+      expect.any(Object),
+    );
+  });
+
+  it("merges dedicated video pricing into specialized models", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) =>
+        new Response(
+          JSON.stringify(
+            String(input).includes("/videos/models")
+              ? {
+                  data: [
+                    {
+                      id: "minimax/hailuo-3",
+                      pricing_skus: { duration_seconds: "0.13", reference_images: "0.04" },
+                    },
+                  ],
+                }
+              : {
+                  data: [
+                    {
+                      id: "minimax/hailuo-3",
+                      canonical_slug: "minimax/hailuo-03-20260730",
+                      name: "MiniMax: H3",
+                      context_length: 0,
+                      created: 1_785_366_648,
+                      expiration_date: null,
+                      architecture: {
+                        input_modalities: ["text", "image", "video", "audio"],
+                        output_modalities: ["video"],
+                      },
+                      pricing: { prompt: "0", completion: "0" },
+                    },
+                  ],
+                },
+          ),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+
+    const models = await fetchOpenRouterModels(true);
+
+    expect(models[0]?.pricing_skus).toEqual({
+      duration_seconds: "0.13",
+      reference_images: "0.04",
+    });
   });
 
   it("keeps free and batch variants while excluding other zero-priced routes", async () => {

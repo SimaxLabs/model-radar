@@ -35,6 +35,7 @@ export interface OpenRouterModel {
     audio?: string;
     audio_output?: string;
   };
+  pricing_skus?: Record<string, string>;
   top_provider?: {
     max_completion_tokens: number | null;
   };
@@ -53,7 +54,18 @@ export type PricingBasis = "token" | "specialized";
 export interface SpecializedRate {
   label: string;
   price: number;
-  unit: "1M text tokens" | "1M characters" | "1M audio tokens" | "1M image tokens" | "input image" | "output image" | "request";
+  unit:
+    | "1M text tokens"
+    | "1M characters"
+    | "1M audio tokens"
+    | "1M image tokens"
+    | "1M video tokens"
+    | "input image"
+    | "output image"
+    | "image"
+    | "second"
+    | "megapixel-second"
+    | "request";
 }
 
 export interface SpecializedPricing {

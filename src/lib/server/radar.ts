@@ -65,6 +65,66 @@ function positivePrice(value: string | undefined) {
   return Number.isFinite(price) && price > 0 ? price : null;
 }
 
+function getVideoRate(sku: string, value: string): { side: "input" | "output"; rate: SpecializedRate } | null {
+  const rawPrice = positivePrice(value);
+  if (rawPrice === null) return null;
+
+  if (sku === "reference_images") {
+    return { side: "input", rate: { label: "Reference image", price: rawPrice, unit: "image" } };
+  }
+  if (sku === "cents_per_image_input") {
+    return { side: "input", rate: { label: "Image", price: rawPrice / 100, unit: "input image" } };
+  }
+
+  let match = sku.match(
+    /^(?:(text|image)_to_video_)?duration_seconds(?:_(with|without)_audio)?(?:_(480p|720p|1024p|1080p|4k))?$/,
+  );
+  if (match) {
+    const [, workflow, audio, resolution] = match;
+    let label = workflow === "text" ? "Text to video" : workflow === "image" ? "Image to video" : "Video";
+    if (!workflow && audio) label = audio === "with" ? "Video + audio" : "Video only";
+    if (resolution) label += ` ${resolution === "4k" ? "4K" : resolution}`;
+    return { side: "output", rate: { label, price: rawPrice, unit: "second" } };
+  }
+
+  match = sku.match(/^cents_per_second_(output|video_continuation)(?:_(720p|1080p))?$/);
+  if (match) {
+    const label = `${match[1] === "output" ? "Video output" : "Video continuation"}${match[2] ? ` ${match[2]}` : ""}`;
+    return { side: "output", rate: { label, price: rawPrice / 100, unit: "second" } };
+  }
+
+  match = sku.match(/^cents_per_video_output_second_(480p|720p|1080p)$/);
+  if (match) {
+    return {
+      side: "output",
+      rate: { label: `Video output ${match[1]}`, price: rawPrice / 100, unit: "second" },
+    };
+  }
+
+  match = sku.match(/^video_tokens(?:_(4k|1080p))?(?:_(without_audio|with_video_input))?$/);
+  if (match) {
+    const [, resolution, mode] = match;
+    let label = mode === "without_audio" ? "Video only" : mode === "with_video_input" ? "Video input" : "Video + audio";
+    if (resolution) label += ` ${resolution === "4k" ? "4K" : resolution}`;
+    return { side: "output", rate: { label, price: rawPrice * MILLION, unit: "1M video tokens" } };
+  }
+
+  match = sku.match(/^cents_per_megapixel_second_(precise|creative)$/);
+  if (match) {
+    return {
+      side: "output",
+      rate: {
+        label: `Video upscale (${match[1]})`,
+        price: rawPrice / 100,
+        unit: "megapixel-second",
+      },
+    };
+  }
+
+  // ponytail: Unknown SKU names are omitted rather than assigned a guessed unit.
+  return null;
+}
+
 function getSpecializedPricing(model: OpenRouterModel): SpecializedPricing {
   const input: SpecializedRate[] = [];
   const output: SpecializedRate[] = [];
@@ -110,6 +170,10 @@ function getSpecializedPricing(model: OpenRouterModel): SpecializedPricing {
     if (imageOutput !== null) {
       output.push({ label: "Image", price: imageOutput, unit: "output image" });
     }
+  }
+  for (const [sku, value] of Object.entries(model.pricing_skus ?? {})) {
+    const videoRate = getVideoRate(sku, value);
+    if (videoRate) (videoRate.side === "input" ? input : output).push(videoRate.rate);
   }
 
   return { input, output };

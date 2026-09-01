@@ -150,4 +150,23 @@ describe("radar model variants", () => {
       },
     });
   });
+
+  it("reports dedicated video pricing for H3", async () => {
+    mocks.fetchOpenRouterModels.mockResolvedValue([
+      {
+        ...openRouterModel("minimax/hailuo-3", "0", "0", ["video"]),
+        pricing_skus: { duration_seconds: "0.13", reference_images: "0.04" },
+      },
+    ]);
+
+    const radar = await getRadarData(true);
+
+    expect(radar.models[0]).toMatchObject({
+      id: "minimax/hailuo-3",
+      specializedPricing: {
+        input: [{ label: "Reference image", price: 0.04, unit: "image" }],
+        output: [{ label: "Video", price: 0.13, unit: "second" }],
+      },
+    });
+  });
 });
