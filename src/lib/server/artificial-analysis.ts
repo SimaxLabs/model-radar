@@ -49,14 +49,6 @@ function textContent(value: string) {
   return decodeHtml(value.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
 }
 
-function hasControlCharacter(value: string) {
-  for (let index = 0; index < value.length; index += 1) {
-    const code = value.charCodeAt(index);
-    if (code < 32 || code === 127) return true;
-  }
-  return false;
-}
-
 function parseDate(value: string) {
   const match = PUBLICATION_DATE.exec(value);
   if (!match) return null;
@@ -83,7 +75,7 @@ export function parseArtificialAnalysisArticles(html: string) {
     if (seen.has(path)) continue;
 
     const title = textContent(HEADING.exec(body)?.[1] ?? "");
-    if (!title || title.length > 240 || hasControlCharacter(title)) continue;
+    if (!title || title.length > 240 || /\p{Cc}/u.test(title)) continue;
 
     let publishedDate: string | null = null;
     for (const paragraph of body.matchAll(PARAGRAPH)) {

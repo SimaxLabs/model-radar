@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fetchOpenRouterModels } from "$lib/server/openrouter";
+import { openRouterModel } from "./fixtures";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -12,16 +13,8 @@ describe("OpenRouter models", () => {
         JSON.stringify({
           data: [
             {
-              id: "example/model",
-              canonical_slug: "example/model-2026-01-01",
+              ...openRouterModel("example/model", "0.000001", "0.000005", ["text", "audio"]),
               name: "Example: Model",
-              context_length: 128_000,
-              created: 1_700_000_000,
-              expiration_date: null,
-              architecture: {
-                input_modalities: ["text", "image"],
-                output_modalities: ["text", "audio"],
-              },
               pricing: {
                 prompt: "0.000001",
                 completion: "0.000005",
@@ -91,19 +84,7 @@ describe("OpenRouter models", () => {
                 ? { data: [] }
               : {
                   data: [
-                    {
-                      id: "minimax/hailuo-3",
-                      canonical_slug: "minimax/hailuo-03-20260730",
-                      name: "MiniMax: H3",
-                      context_length: 0,
-                      created: 1_785_366_648,
-                      expiration_date: null,
-                      architecture: {
-                        input_modalities: ["text", "image", "video", "audio"],
-                        output_modalities: ["video"],
-                      },
-                      pricing: { prompt: "0", completion: "0" },
-                    },
+                    openRouterModel("minimax/hailuo-3", "0", "0", ["video"]),
                   ],
                 },
           ),
@@ -150,19 +131,7 @@ describe("OpenRouter models", () => {
                 }
               : {
                   data: [
-                    {
-                      id: "recraft/recraft-v4-styles-pro",
-                      canonical_slug: "recraft/recraft-v4-styles-pro",
-                      name: "Recraft: Recraft V4 Styles Pro",
-                      context_length: 0,
-                      created: 1_787_742_640,
-                      expiration_date: null,
-                      architecture: {
-                        input_modalities: ["text", "image"],
-                        output_modalities: ["image"],
-                      },
-                      pricing: { prompt: "0", completion: "0" },
-                    },
+                    openRouterModel("recraft/recraft-v4-styles-pro", "0", "0", ["image"]),
                   ],
                 };
         return new Response(JSON.stringify(data), {
@@ -187,100 +156,19 @@ describe("OpenRouter models", () => {
         new Response(
           JSON.stringify({
             data: [
+              openRouterModel("example/model", "0.000002", "0.00001"),
+              openRouterModel("example/model:batch", "0.000001", "0.000005"),
+              openRouterModel("example/model:free", "0", "0"),
+              openRouterModel("example/image-model", "0", "0", ["image"]),
               {
-                id: "example/model",
-                canonical_slug: "example/model-2026-01-01",
-                name: "Example: Model",
-                context_length: 128_000,
-                created: 1_700_000_000,
-                expiration_date: null,
-                architecture: {
-                  input_modalities: ["text"],
-                  output_modalities: ["text"],
-                },
-                pricing: { prompt: "0.000002", completion: "0.00001" },
-              },
-              {
-                id: "example/model:batch",
-                canonical_slug: "example/model-2026-01-01",
-                name: "Example: Model (batch)",
-                context_length: 128_000,
-                created: 1_700_000_000,
-                expiration_date: null,
-                architecture: {
-                  input_modalities: ["text"],
-                  output_modalities: ["text"],
-                },
-                pricing: { prompt: "0.000001", completion: "0.000005" },
-              },
-              {
-                id: "example/model:free",
-                canonical_slug: "example/model-2026-01-01",
-                name: "Example: Model (free)",
-                context_length: 128_000,
-                created: 1_700_000_000,
-                expiration_date: null,
-                architecture: {
-                  input_modalities: ["text"],
-                  output_modalities: ["text"],
-                },
-                pricing: { prompt: "0", completion: "0" },
-              },
-              {
-                id: "example/image-model",
-                canonical_slug: "example/image-model",
-                name: "Example: Image Model",
-                context_length: 32_000,
-                created: 1_700_000_000,
-                expiration_date: null,
-                architecture: {
-                  input_modalities: ["text", "image"],
-                  output_modalities: ["image"],
-                },
-                pricing: {
-                  prompt: "0",
-                  completion: "0",
-                },
-              },
-              {
-                id: "example/invalid-architecture",
-                canonical_slug: "example/invalid-architecture",
-                name: "Example: Invalid Architecture",
-                context_length: 128_000,
-                created: 1_700_000_000,
-                expiration_date: null,
+                ...openRouterModel("example/invalid-architecture", "0.000002", "0.00001"),
                 architecture: {
                   input_modalities: "text",
                   output_modalities: ["text"],
                 },
-                pricing: { prompt: "0.000002", completion: "0.00001" },
               },
-              {
-                id: "example/dynamic-route",
-                canonical_slug: "example/dynamic-route",
-                name: "Example: Dynamic Route",
-                context_length: 128_000,
-                created: 1_700_000_000,
-                expiration_date: null,
-                architecture: {
-                  input_modalities: ["text"],
-                  output_modalities: ["text"],
-                },
-                pricing: { prompt: "0", completion: "0" },
-              },
-              {
-                id: "openrouter/free",
-                canonical_slug: "openrouter/free",
-                name: "OpenRouter: Free Models Router",
-                context_length: 128_000,
-                created: 1_700_000_000,
-                expiration_date: null,
-                architecture: {
-                  input_modalities: ["text"],
-                  output_modalities: ["text"],
-                },
-                pricing: { prompt: "0", completion: "0" },
-              },
+              openRouterModel("example/dynamic-route", "0", "0"),
+              openRouterModel("openrouter/free", "0", "0"),
             ],
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },

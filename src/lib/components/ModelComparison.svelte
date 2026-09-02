@@ -168,32 +168,5 @@
         {/each}
       </tbody>
     </table>
-    <div class="comparison-cards">
-      {#each models as model (model.id)}
-        <article class="comparison-card">
-          <div class="comparison-card-heading">
-            <div>
-              <strong>{displayModelName(model.name)}</strong>
-              <div class="comparison-modalities"><ModelModalities inputModalities={model.inputModalities} outputModalities={model.outputModalities} /></div>
-              <a href={`https://openrouter.ai/${model.id}`} target="_blank" rel="noreferrer">OpenRouter <ExternalLink size={11} /></a>
-            </div>
-          </div>
-          {#each metricGroups as group (group.label)}
-            <section>
-              <h3>{group.label}</h3>
-              <dl>
-                {#each group.metrics as metric (metric.label)}
-                  {@const best = isBest(metric, model)}
-                  <div class:comparison-best={best}>
-                    <dt>{metric.label}</dt>
-                    <dd><strong>{metric.display(model)}</strong>{#if best}<span>Best</span>{/if}</dd>
-                  </div>
-                {/each}
-              </dl>
-            </section>
-          {/each}
-        </article>
-      {/each}
-    </div>
   </div>
 </dialog>

@@ -2,7 +2,6 @@
   color-scheme: dark;
   --bg: #111217;
   --surface: #1a1d22;
-  --surface-raised: #22262c;
   --surface-hover: #292d34;
   --border: #353a43;
   --border-strong: #4a505b;
@@ -16,14 +15,6 @@
   --green: #73bf69;
   --red: #f2495c;
   --yellow: #fade2a;
-  --ink: var(--text-strong);
-  --ink-soft: var(--surface-raised);
-  --paper: var(--bg);
-  --paper-deep: var(--surface);
-  --white: var(--surface);
-  --line: var(--border);
-  --lime: var(--orange);
-  --coral: var(--orange);
 }
 
 * {
@@ -67,6 +58,18 @@ summary:focus-visible {
 
 a {
   color: inherit;
+}
+
+summary {
+  list-style: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+summary::marker {
+  content: "";
 }
 
 ::selection {
@@ -195,15 +198,6 @@ a {
   border-radius: 3px;
   background: var(--surface);
   cursor: pointer;
-  list-style: none;
-}
-
-.source-menu summary::-webkit-details-marker {
-  display: none;
-}
-
-.source-menu summary::marker {
-  content: "";
 }
 
 .source-menu summary:hover,
@@ -636,10 +630,6 @@ a {
   min-width: 0;
 }
 
-.section-title-copy > h2:only-child {
-  margin-top: 0;
-}
-
 .section-title-icon {
   width: 36px;
   height: 36px;
@@ -737,15 +727,6 @@ a {
   border-radius: 3px;
   color: var(--faint);
   cursor: pointer;
-  list-style: none;
-}
-
-.recommendation-info summary::-webkit-details-marker {
-  display: none;
-}
-
-.recommendation-info summary::marker {
-  content: "";
 }
 
 .recommendation-info summary:hover,
@@ -787,10 +768,6 @@ a {
 .recommendation-table {
   flex: 1;
   overflow-x: auto;
-}
-
-.recommendation-mobile-list {
-  display: none;
 }
 
 .recommendation-table table {
@@ -1191,146 +1168,17 @@ a {
   gap: 6px;
 }
 
-.capability-menu {
-  position: relative;
-}
-
-.capability-menu summary {
+.capability-select {
   width: 132px;
   height: 32px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0 7px;
+  padding: 0 8px;
   border: 1px solid var(--border-strong);
   border-radius: 3px;
   background: var(--surface);
   color: var(--text);
-  cursor: pointer;
-  list-style: none;
-}
-
-.capability-menu summary::-webkit-details-marker {
-  display: none;
-}
-
-.capability-menu summary::marker {
-  content: "";
-}
-
-.capability-menu[open] summary {
-  border-color: #5b616b;
-  background: var(--surface-hover);
-}
-
-.capability-menu-icon {
-  width: 23px;
-  height: 23px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border-radius: 3px;
-}
-
-.capability-menu-input .capability-menu-icon {
-  background: rgba(87, 148, 242, 0.12);
-  color: #8ab8ff;
-}
-
-.capability-menu-output .capability-menu-icon {
-  background: rgba(255, 120, 10, 0.12);
-  color: #ffad66;
-}
-
-.capability-menu-copy {
-  min-width: 0;
-  display: grid;
-  flex: 1;
-  line-height: 1.05;
-}
-
-.capability-menu-copy small {
-  color: var(--faint);
-  font-size: 8px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.capability-menu-copy strong {
-  overflow: hidden;
-  color: var(--text);
   font-size: 11px;
   font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.capability-menu summary > svg {
-  flex: 0 0 auto;
-  color: var(--faint);
-  transition: transform 120ms ease;
-}
-
-.capability-menu[open] summary > svg {
-  transform: rotate(180deg);
-}
-
-.capability-menu-options {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 60;
-  width: 184px;
-  max-height: 280px;
-  overflow-y: auto;
-  padding: 5px;
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
-  background: #202329;
-  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.48);
-}
-
-.capability-menu-options button {
-  width: 100%;
-  min-height: 34px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 7px;
-  border: 1px solid transparent;
-  border-radius: 3px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 12px;
-  text-align: left;
   cursor: pointer;
-}
-
-.capability-menu-options button:hover,
-.capability-menu-options button.active {
-  border-color: var(--border);
-  background: var(--surface-hover);
-  color: var(--text-strong);
-}
-
-.capability-menu-options button > span {
-  width: 24px;
-  height: 24px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border-radius: 3px;
-}
-
-.capability-menu-input .capability-menu-options button > span {
-  background: rgba(87, 148, 242, 0.1);
-  color: #8ab8ff;
-}
-
-.capability-menu-output .capability-menu-options button > span {
-  background: rgba(255, 120, 10, 0.1);
-  color: #ffad66;
 }
 
 .capability-filter-clear {
@@ -1402,8 +1250,7 @@ a {
   background: var(--surface);
 }
 
-.mobile-sort,
-.model-card-list {
+.mobile-sort {
   display: none;
 }
 
@@ -1543,9 +1390,6 @@ tbody tr:hover td {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.model-identity strong {
   color: var(--text-strong);
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 13px;
@@ -1557,38 +1401,20 @@ tbody tr:hover td {
 }
 
 .intelligence-cell {
-  position: relative;
   min-width: 62px;
-  display: inline-block;
-  padding-bottom: 5px;
+  display: inline-grid;
+  gap: 3px;
 }
 
 .intelligence-cell strong {
-  position: relative;
-  z-index: 1;
   color: var(--text);
   font-weight: 500;
 }
 
-.intelligence-cell::after,
-.intelligence-cell i {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 2px;
-  border-radius: 1px;
-  content: "";
-}
-
-.intelligence-cell::after {
+.intelligence-cell meter {
   width: 62px;
-  background: #30343a;
-}
-
-.intelligence-cell i {
-  z-index: 1;
-  max-width: 62px;
-  background: var(--blue);
+  height: 2px;
+  accent-color: var(--blue);
 }
 
 .change-up,
@@ -1657,10 +1483,6 @@ td.specialized-price-col {
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 10px;
   font-weight: 500;
-}
-
-.model-card-metrics .specialized-rate-list {
-  justify-items: start;
 }
 
 .change-has-detail {
@@ -1956,9 +1778,8 @@ footer a:hover {
   backdrop-filter: blur(2px);
 }
 
-.detail-close {
-  width: 32px;
-  height: 32px;
+.detail-close,
+.comparison-close {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -1970,7 +1791,13 @@ footer a:hover {
   cursor: pointer;
 }
 
-.detail-close:hover {
+.detail-close {
+  width: 32px;
+  height: 32px;
+}
+
+.detail-close:hover,
+.comparison-close:hover {
   border-color: #555b64;
   color: var(--text-strong);
 }
@@ -2017,12 +1844,7 @@ footer a:hover {
   color: #ff8290;
 }
 
-.segment-tag.segment-cheap {
-  border-color: #426b3d;
-  background: rgba(115, 191, 105, 0.1);
-  color: #91d989;
-}
-
+.segment-tag.segment-cheap,
 .segment-tag.segment-free {
   border-color: #426b3d;
   background: rgba(115, 191, 105, 0.1);
@@ -2217,29 +2039,12 @@ footer a:hover {
 .comparison-close {
   width: 30px;
   height: 30px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.comparison-close:hover {
-  border-color: #555b64;
-  color: var(--text-strong);
 }
 
 .comparison-scroll {
   max-height: calc(100vh - 124px);
   overflow: auto;
   padding: 0 18px 18px;
-}
-
-.comparison-cards {
-  display: none;
 }
 
 .comparison-table {
@@ -2285,9 +2090,6 @@ footer a:hover {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.comparison-model strong {
   color: var(--text-strong);
   font-size: 15px;
   font-weight: 600;
@@ -2425,108 +2227,6 @@ footer a:hover {
     border-bottom: 0;
   }
 
-  .recommendation-table {
-    overflow: visible;
-  }
-
-  .recommendation-table table {
-    display: none;
-  }
-
-  .recommendation-mobile-list {
-    display: grid;
-    gap: 8px;
-    margin: 0;
-    padding: 8px;
-    list-style: none;
-  }
-
-  .recommendation-mobile-list li {
-    overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: #17191d;
-  }
-
-  .recommendation-mobile-heading {
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 11px 12px;
-    background: #1b1e23;
-  }
-
-  .recommendation-rank {
-    width: 22px;
-    height: 22px;
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    border: 1px solid var(--border-strong);
-    border-radius: 50%;
-    color: var(--faint);
-    font-family: "SFMono-Regular", Consolas, monospace;
-    font-size: 10px;
-  }
-
-  .recommendation-mobile-heading h3 {
-    min-width: 0;
-    flex: 1;
-    margin: 0;
-  }
-
-  .recommendation-mobile-heading button {
-    width: 100%;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: var(--text-strong);
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1.35;
-    text-align: left;
-    overflow-wrap: anywhere;
-    cursor: pointer;
-  }
-
-  .recommendation-mobile-heading button:hover {
-    color: var(--orange-bright);
-  }
-
-  .recommendation-mobile-list dl {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    margin: 0;
-  }
-
-  .recommendation-mobile-list dl div {
-    min-width: 0;
-    padding: 9px 12px 10px;
-  }
-
-  .recommendation-mobile-list dl div + div {
-    border-left: 1px solid var(--border);
-  }
-
-  .recommendation-mobile-list dt,
-  .model-card-metrics dt {
-    color: var(--faint);
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-
-  .recommendation-mobile-list dd,
-  .model-card-metrics dd {
-    margin: 4px 0 0;
-    color: var(--text-strong);
-    font-family: "SFMono-Regular", Consolas, monospace;
-    font-size: 12px;
-    font-weight: 600;
-  }
-
   .model-heading {
     align-items: stretch;
     flex-direction: column;
@@ -2596,224 +2296,6 @@ footer a:hover {
     padding: 0 9px;
     color: var(--orange-bright);
     cursor: pointer;
-  }
-
-  .model-table {
-    display: none;
-  }
-
-  .model-card-list {
-    display: grid;
-    gap: 8px;
-    padding: 8px;
-  }
-
-  .model-card {
-    overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: #17191d;
-  }
-
-  .model-card-heading {
-    padding: 12px;
-    background: #1b1e23;
-  }
-
-  .model-card .model-identity {
-    align-items: flex-start;
-  }
-
-  .model-card .model-identity strong {
-    max-width: none;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  .model-card-metrics {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1px;
-    margin: 0;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    background: var(--border);
-  }
-
-  .model-card-metrics > div {
-    min-width: 0;
-    min-height: 60px;
-    padding: 10px 12px;
-    background: #17191d;
-  }
-
-  .model-card-metrics .model-card-wide {
-    grid-column: 1 / -1;
-  }
-
-  .model-card-metrics dd small {
-    color: var(--faint);
-    font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 10px;
-    font-weight: 500;
-    text-transform: uppercase;
-  }
-
-  .model-card-metrics .model-card-monthly dd {
-    color: var(--orange-bright);
-    font-size: 15px;
-  }
-
-  .model-card-metrics .price-with-move {
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .model-card-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
-    padding: 8px;
-  }
-
-  .model-card-actions button {
-    min-height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 6px 8px;
-    border: 1px solid var(--border-strong);
-    border-radius: 3px;
-    background: #1b1e23;
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .model-card-actions button:hover:not(:disabled),
-  .model-card-actions button.active {
-    border-color: #555b64;
-    color: var(--text-strong);
-  }
-
-  .model-card-actions button.active {
-    border-color: #a94f06;
-    background: rgba(255, 120, 10, 0.15);
-    color: var(--orange-bright);
-  }
-
-  .model-card-actions button:disabled {
-    cursor: not-allowed;
-    opacity: 0.35;
-  }
-
-  .comparison-table {
-    display: none;
-  }
-
-  .comparison-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
-    gap: 10px;
-    padding-top: 10px;
-  }
-
-  .comparison-card {
-    overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: #17191d;
-  }
-
-  .comparison-card-heading {
-    min-width: 0;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 12px;
-    background: #1b1e23;
-  }
-
-  .comparison-card-heading > div {
-    min-width: 0;
-  }
-
-  .comparison-card-heading strong {
-    display: block;
-    color: var(--text-strong);
-    font-size: 14px;
-    overflow-wrap: anywhere;
-  }
-
-  .comparison-card-heading a {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    margin-top: 6px;
-    color: var(--blue);
-    font-size: 11px;
-    text-decoration: none;
-  }
-
-  .comparison-card section h3 {
-    margin: 0;
-    padding: 7px 12px;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    background: #24272c;
-    color: var(--text);
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .comparison-card dl {
-    margin: 0;
-  }
-
-  .comparison-card dl div {
-    min-height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .comparison-card dl div:last-child {
-    border-bottom: 0;
-  }
-
-  .comparison-card dt {
-    color: var(--muted);
-    font-size: 12px;
-  }
-
-  .comparison-card dd {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: 0;
-    color: var(--text);
-    font-family: "SFMono-Regular", Consolas, monospace;
-    font-size: 12px;
-    text-align: right;
-  }
-
-  .comparison-card dd > span {
-    color: var(--green);
-    font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  .comparison-card dl div.comparison-best {
-    background: rgba(115, 191, 105, 0.09);
   }
 
 }
@@ -2929,8 +2411,7 @@ footer a:hover {
     gap: 6px;
   }
 
-  .capability-menu summary,
-  .capability-menu-options {
+  .capability-select {
     width: 100%;
   }
 

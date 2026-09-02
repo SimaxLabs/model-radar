@@ -13,7 +13,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 
-COPY svelte.config.js tsconfig.json vite.config.ts vitest.config.mts ./
+COPY svelte.config.js tsconfig.json vite.config.ts ./
 COPY src ./src
 COPY static ./static
 

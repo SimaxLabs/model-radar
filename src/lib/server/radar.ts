@@ -28,12 +28,8 @@ function positiveNumber(value: string | undefined, fallback: number) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function clamp(value: number, min = 0, max = 1) {
-  return Math.min(max, Math.max(min, value));
-}
-
 function scale(value: number, min: number, max: number) {
-  return max === min ? 1 : clamp((value - min) / (max - min));
+  return max === min ? 1 : (value - min) / (max - min);
 }
 
 function addValueScores(models: TokenPricedModel[]) {
@@ -319,7 +315,6 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       blendedPrice,
       previousInputPrice: null,
       previousOutputPrice: null,
-      priceChangeBaselineAt: null,
       priceChangeRecordedAt: null,
       inputPriceChangePercent: null,
       outputPriceChangePercent: null,
@@ -329,7 +324,6 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       intelligenceRank: null,
       segment: isFree ? "free" : isBatch ? "batch" : isSpecialized ? "specialized" : isCheap ? "cheap" : "standard",
       isCheap,
-      isStateOfTheArt: false,
       valueScore: null,
     };
   });
@@ -345,7 +339,6 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
   for (const [index, model] of rankedModels.entries()) {
     model.intelligenceRank = index + 1;
     if (index < STATE_OF_THE_ART_COUNT) {
-      model.isStateOfTheArt = true;
       model.segment = "state-of-the-art";
     }
   }
@@ -362,7 +355,6 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
         blendedPrice: model.blendedPrice,
       })),
       capturedAt,
-      rankedCount,
     );
     for (const model of models) {
       if (!hasTokenPricing(model)) continue;
@@ -371,7 +363,6 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       const baselineOutputPrice = movement?.baselineOutputPrice ?? null;
       model.previousInputPrice = baselineInputPrice;
       model.previousOutputPrice = baselineOutputPrice;
-      model.priceChangeBaselineAt = movement?.baselineCapturedAt ?? null;
       model.priceChangeRecordedAt = movement?.changedAt ?? null;
       model.inputPriceChangePercent = calculatePriceChange(model.inputPrice, baselineInputPrice);
       model.outputPriceChangePercent = calculatePriceChange(model.outputPrice, baselineOutputPrice);
@@ -402,17 +393,10 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
     if (right.intelligenceRank === null) return -1;
     return left.intelligenceRank - right.intelligenceRank;
   });
-  const modelPriceDirections = tokenPricedPaidModels.map((model) => {
-    const changes = [model.inputPriceChangePercent, model.outputPriceChangePercent].filter(
-      (change): change is number => change !== null && Math.abs(change) >= 0.001,
-    );
-    return {
-      increased: changes.some((change) => change > 0),
-      dropped: changes.some((change) => change < 0),
-    };
-  });
-  const priceChangedModels = modelPriceDirections.filter(
-    ({ increased, dropped }) => increased || dropped,
+  const priceChangedModels = tokenPricedPaidModels.filter((model) =>
+    [model.inputPriceChangePercent, model.outputPriceChangePercent].some(
+      (change) => change !== null && Math.abs(change) >= 0.001,
+    )
   ).length;
 
   return {
@@ -425,15 +409,7 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
       freeModels: models.filter((model) => model.segment === "free").length,
       batchModels: models.filter((model) => model.segment === "batch").length,
       rankedModels: rankedCount,
-      cheapModels: models.filter((model) => model.isCheap).length,
-      stateOfTheArtModels: models.filter((model) => model.isStateOfTheArt).length,
       priceChangedModels,
-      priceIncreases: modelPriceDirections.filter(({ increased, dropped }) => increased && !dropped)
-        .length,
-      priceDrops: modelPriceDirections.filter(({ increased, dropped }) => dropped && !increased)
-        .length,
-      priceMixed: modelPriceDirections.filter(({ increased, dropped }) => increased && dropped)
-        .length,
       cheapThreshold,
     },
     sources: {
@@ -488,12 +464,7 @@ export function unavailableRadarData(): RadarData {
       freeModels: 0,
       batchModels: 0,
       rankedModels: 0,
-      cheapModels: 0,
-      stateOfTheArtModels: 0,
       priceChangedModels: 0,
-      priceIncreases: 0,
-      priceDrops: 0,
-      priceMixed: 0,
       cheapThreshold: positiveNumber(env.CHEAP_MODEL_MAX_PRICE, 1),
     },
     sources: {

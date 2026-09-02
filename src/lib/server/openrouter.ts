@@ -5,26 +5,16 @@ const OPENROUTER_VIDEO_MODELS_URL = "https://openrouter.ai/api/v1/videos/models"
 const OPENROUTER_IMAGE_MODELS_URL = "https://openrouter.ai/api/v1/images/models";
 const CACHE_TTL = 60 * 60 * 1000;
 
-interface OpenRouterResponse {
-  data: OpenRouterModel[];
-}
+type DataResponse<T> = { data: T[] };
 
 interface OpenRouterVideoModel {
   id: string;
   pricing_skus: Record<string, string>;
 }
 
-interface OpenRouterVideoResponse {
-  data: OpenRouterVideoModel[];
-}
-
 interface OpenRouterImageModel {
   id: string;
   endpoints: string;
-}
-
-interface OpenRouterImageResponse {
-  data: OpenRouterImageModel[];
 }
 
 interface PricingResult<T> {
@@ -100,7 +90,7 @@ function isValidImagePrice(price: unknown): price is OpenRouterImagePrice {
 async function requestVideoPricing(options: RequestInit) {
   const response = await fetch(OPENROUTER_VIDEO_MODELS_URL, options);
   if (!response.ok) throw new Error(`OpenRouter video models returned ${response.status}`);
-  const payload = (await response.json()) as OpenRouterVideoResponse;
+  const payload = (await response.json()) as DataResponse<OpenRouterVideoModel>;
   if (!payload || !Array.isArray(payload.data)) {
     throw new Error("OpenRouter returned an invalid video models payload");
   }
@@ -114,7 +104,7 @@ async function requestVideoPricing(options: RequestInit) {
 async function requestImagePricing(options: RequestInit) {
   const response = await fetch(OPENROUTER_IMAGE_MODELS_URL, options);
   if (!response.ok) throw new Error(`OpenRouter image models returned ${response.status}`);
-  const payload = (await response.json()) as OpenRouterImageResponse;
+  const payload = (await response.json()) as DataResponse<OpenRouterImageModel>;
   if (!payload || !Array.isArray(payload.data)) {
     throw new Error("OpenRouter returned an invalid image models payload");
   }
@@ -174,7 +164,7 @@ async function requestModels() {
   };
   const response = await fetch(OPENROUTER_MODELS_URL, options);
   if (!response.ok) throw new Error(`OpenRouter returned ${response.status}`);
-  const payload = (await response.json()) as OpenRouterResponse;
+  const payload = (await response.json()) as DataResponse<OpenRouterModel>;
   if (!payload || !Array.isArray(payload.data)) {
     throw new Error("OpenRouter returned an invalid models payload");
   }

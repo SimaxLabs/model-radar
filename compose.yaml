@@ -3,10 +3,7 @@ name: model-radar
 services:
   app:
     image: ${MODEL_RADAR_IMAGE:-model-radar:latest}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: runtime
+    build: .
     init: true
     restart: unless-stopped
     ports:
@@ -34,16 +31,6 @@ services:
     mem_limit: 512m
     cpus: 1.0
     stop_grace_period: 30s
-    healthcheck:
-      test:
-        - CMD
-        - node
-        - -e
-        - fetch('http://127.0.0.1:3000/api/health').then((response) => { if (!response.ok) process.exit(1) }).catch(() => process.exit(1))
-      interval: 30s
-      timeout: 5s
-      start_period: 20s
-      retries: 3
     logging:
       driver: json-file
       options:

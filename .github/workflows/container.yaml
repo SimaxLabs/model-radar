@@ -81,8 +81,6 @@ jobs:
         uses: docker/build-push-action@v7.3.0
         with:
           context: .
-          file: Dockerfile
-          target: runtime
           platforms: linux/amd64
           build-args: |
             BASE_PATH=${{ env.BASE_PATH }}

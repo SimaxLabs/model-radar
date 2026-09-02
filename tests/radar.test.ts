@@ -13,35 +13,7 @@ vi.mock("$lib/server/db/client", () => ({ getDatabase: mocks.getDatabase }));
 vi.mock("$lib/server/db/snapshots", () => ({ syncPriceHistory: mocks.syncPriceHistory }));
 
 import { getRadarData } from "$lib/server/radar";
-
-function openRouterModel(
-  id: string,
-  prompt: string,
-  completion: string,
-  outputModalities = ["text"],
-) {
-  return {
-    id,
-    canonical_slug: "example/model-2026-01-01",
-    name: id,
-    context_length: 128_000,
-    architecture: {
-      input_modalities: ["text", "image"],
-      output_modalities: outputModalities,
-    },
-    top_provider: { max_completion_tokens: 16_384 },
-    created: 1_700_000_000,
-    expiration_date: null,
-    pricing: { prompt, completion },
-    benchmarks: {
-      artificial_analysis: {
-        intelligence_index: 80,
-        coding_index: 75,
-        agentic_index: 70,
-      },
-    },
-  };
-}
+import { openRouterModel } from "./fixtures";
 
 beforeEach(() => {
   mocks.fetchOpenRouterModels.mockReset();
@@ -81,13 +53,10 @@ describe("radar model variants", () => {
       freeModels: 1,
       batchModels: 1,
       rankedModels: 1,
-      cheapModels: 0,
-      stateOfTheArtModels: 1,
     });
     expect(models.get("example/model")).toMatchObject({
       segment: "state-of-the-art",
       intelligenceRank: 1,
-      isStateOfTheArt: true,
     });
     expect(models.get("example/model:free")).toMatchObject({
       segment: "free",
@@ -97,14 +66,12 @@ describe("radar model variants", () => {
       maxCompletionTokens: 16_384,
       intelligenceRank: null,
       isCheap: false,
-      isStateOfTheArt: false,
       valueScore: null,
     });
     expect(models.get("example/model:batch")).toMatchObject({
       segment: "batch",
       intelligenceRank: null,
       isCheap: false,
-      isStateOfTheArt: false,
       valueScore: null,
     });
     expect(models.get("example/image-model")).toMatchObject({
@@ -122,13 +89,11 @@ describe("radar model variants", () => {
       blendedPrice: null,
       intelligenceRank: null,
       isCheap: false,
-      isStateOfTheArt: false,
       valueScore: null,
     });
     expect(mocks.syncPriceHistory).toHaveBeenCalledWith(
       expect.not.arrayContaining([expect.objectContaining({ modelId: "example/image-model" })]),
       expect.any(Date),
-      1,
     );
   });
 

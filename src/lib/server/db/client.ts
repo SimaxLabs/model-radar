@@ -1,13 +1,10 @@
 import { createClient, type Client } from "@libsql/client/node";
-import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 import { env } from "$env/dynamic/private";
 import fs from "node:fs";
 import path from "node:path";
-import { schema } from "$lib/server/db/schema";
 
 interface DatabaseConnection {
   client: Client;
-  db: LibSQLDatabase<typeof schema>;
   kind: "local" | "turso";
 }
 
@@ -29,12 +26,6 @@ const migrations = [
       )`,
       `CREATE INDEX IF NOT EXISTS price_snapshots_model_date
         ON price_snapshots (model_id, captured_on DESC)`,
-      `CREATE TABLE IF NOT EXISTS sync_runs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        captured_at TEXT NOT NULL,
-        model_count INTEGER NOT NULL,
-        ranked_count INTEGER NOT NULL
-      )`,
     ],
   },
   {
@@ -111,6 +102,10 @@ const migrations = [
         )`,
     ],
   },
+  {
+    id: "0004_remove_sync_runs",
+    statements: ["DROP TABLE IF EXISTS sync_runs"],
+  },
 ] as const;
 
 function createConnection(): DatabaseConnection {
@@ -132,7 +127,6 @@ function createConnection(): DatabaseConnection {
 
   return {
     client,
-    db: drizzle(client, { schema }),
     kind: remote ? "turso" : "local",
   };
 }

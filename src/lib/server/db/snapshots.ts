@@ -1,7 +1,6 @@
 import type { Client, InStatement } from "@libsql/client";
 import { PRICE_HISTORY_RETENTION_DAYS } from "$lib/types";
 import { getDatabase } from "$lib/server/db/client";
-import { syncRuns } from "$lib/server/db/schema";
 
 interface SnapshotInput {
   modelId: string;
@@ -14,8 +13,6 @@ export interface ActivePriceMovement {
   baselineInputPrice: number;
   baselineOutputPrice: number;
   baselineCapturedAt: string | null;
-  currentInputPrice: number;
-  currentOutputPrice: number;
   changedAt: string;
 }
 
@@ -70,7 +67,7 @@ async function getActiveMovements(client: Client, modelIds: string[], cutoffAt: 
     const placeholders = modelIdChunk.map(() => "?").join(",");
     const result = await client.execute({
       sql: `SELECT model_id, baseline_input_price, baseline_output_price,
-          baseline_captured_at, current_input_price, current_output_price, changed_at
+          baseline_captured_at, changed_at
         FROM price_movements
         WHERE changed_at >= ?
           AND baseline_input_price IS NOT NULL
@@ -87,8 +84,6 @@ async function getActiveMovements(client: Client, modelIds: string[], cutoffAt: 
         baselineOutputPrice: Number(row.baseline_output_price),
         baselineCapturedAt:
           row.baseline_captured_at === null ? null : String(row.baseline_captured_at),
-        currentInputPrice: Number(row.current_input_price),
-        currentOutputPrice: Number(row.current_output_price),
         changedAt: String(row.changed_at),
       });
     }
@@ -100,9 +95,8 @@ async function getActiveMovements(client: Client, modelIds: string[], cutoffAt: 
 export async function syncPriceHistory(
   models: SnapshotInput[],
   capturedAt: Date,
-  rankedCount: number,
 ) {
-  const { client, db } = await getDatabase();
+  const { client } = await getDatabase();
   const capturedOn = capturedAt.toISOString().slice(0, 10);
   const capturedAtIso = capturedAt.toISOString();
   const cutoff = new Date(
@@ -142,8 +136,6 @@ export async function syncPriceHistory(
       baselineInputPrice,
       baselineOutputPrice,
       baselineCapturedAt,
-      currentInputPrice: model.inputPrice,
-      currentOutputPrice: model.outputPrice,
       changedAt: capturedAtIso,
     };
     movements.set(model.modelId, movement);
@@ -201,11 +193,8 @@ export async function syncPriceHistory(
       capturedAtIso,
     ],
   }));
-  let changedRows = 0;
-
   for (const statementChunk of chunks(snapshotStatements, 100)) {
-    const results = await client.batch(statementChunk, "write");
-    changedRows += results.reduce((total, result) => total + result.rowsAffected, 0);
+    await client.batch(statementChunk, "write");
   }
 
   await client.batch(
@@ -221,14 +210,6 @@ export async function syncPriceHistory(
     ],
     "write",
   );
-
-  if (changedRows > 0) {
-    await db.insert(syncRuns).values({
-      capturedAt: capturedAtIso,
-      modelCount: models.length,
-      rankedCount,
-    });
-  }
 
   return movements;
 }

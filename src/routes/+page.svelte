@@ -21,7 +21,6 @@
     Shapes,
     X,
   } from "@lucide/svelte";
-  import CapabilityFilter from "$lib/components/CapabilityFilter.svelte";
   import ModelComparison from "$lib/components/ModelComparison.svelte";
   import ModelDetail from "$lib/components/ModelDetail.svelte";
   import ModelModalities from "$lib/components/ModelModalities.svelte";
@@ -29,8 +28,7 @@
   import ProviderLogo from "$lib/components/ProviderLogo.svelte";
   import RecommendationCard from "$lib/components/RecommendationCard.svelte";
   import SpecializedRates from "$lib/components/SpecializedRates.svelte";
-  import SourcePill from "$lib/components/SourcePill.svelte";
-  import { displayModelName, formatPrice, formatSyncTime, formatTokenCount, money } from "$lib/format";
+  import { displayModalityName, displayModelName, formatPrice, formatSyncTime, formatTokenCount, money } from "$lib/format";
   import { hasTokenPricing, rankBudgetModels } from "$lib/scoring";
   import type { RadarData, RadarModel } from "$lib/types";
   import type { PageData } from "./$types";
@@ -231,16 +229,6 @@
     pageNumber = 1;
   }
 
-  function selectInputCapability(value: string) {
-    inputCapability = value;
-    capabilityFiltersChanged();
-  }
-
-  function selectOutputCapability(value: string) {
-    outputCapability = value;
-    capabilityFiltersChanged();
-  }
-
   function clearCapabilityFilters() {
     inputCapability = "all";
     outputCapability = "all";
@@ -352,6 +340,19 @@
   <meta name="description" content="Track OpenRouter model prices and compare them with independent Artificial Analysis intelligence benchmarks." />
 </svelte:head>
 
+{#snippet sortableHeader(key: Sort, label: string, className: string)}
+  <th class={`${className} sortable-column`} aria-sort={sort === key ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
+    <button type="button" onclick={() => toggleSort(key)}>
+      {label}
+      {#if sort === key}
+        {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
+      {:else}
+        <ArrowUpDown size={13} />
+      {/if}
+    </button>
+  </th>
+{/snippet}
+
 <div class="app-shell">
   <main class="main-content" id="top">
     <header class="topbar">
@@ -368,9 +369,11 @@
           <summary aria-label="Show live monitor status"><span class="live-indicator"><i></i>Live monitor</span><ChevronDown size={14} /></summary>
           <div class="source-statuses">
             <div class="source-menu-header"><strong>Data sources</strong></div>
-            <SourcePill source={radar.sources.openRouter} />
-            <SourcePill source={radar.sources.benchmarks} />
-            <SourcePill source={radar.sources.database} />
+            {#each [radar.sources.openRouter, radar.sources.benchmarks, radar.sources.database] as source (source.label)}
+              <div class="source-pill" class:source-unavailable={source.state === "unavailable"} title={source.detail}>
+                <span class="status-dot"></span><span>{source.label}</span>
+              </div>
+            {/each}
           </div>
         </details>
         <button class="refresh-button" onclick={refresh} disabled={refreshing}>
@@ -441,7 +444,7 @@
         </a>
       </section>
 
-      <section class="dashboard-section recommendations-section" aria-label="Top model recommendations">
+      <section class="dashboard-section" aria-label="Top model recommendations">
         <div class="recommendation-grid">
           <RecommendationCard eyebrow="BEST CAPABILITY" method="Token-priced paid OpenRouter models with an AA Index are sorted from highest to lowest. The five highest-ranked models are shown." models={topQuality} tone="ink" onselect={(model) => selectedModel = model} />
           <RecommendationCard eyebrow="BEST UNDER BUDGET" method={`Paid models at or below ${money.format(radar.summary.cheapThreshold)} blended per 1M tokens are scored within the cheap set: 50% normalized AA Index and 50% log-price affordability. The five highest scores are shown.`} models={topBudget} tone="lime" onselect={(model) => selectedModel = model} />
@@ -489,8 +492,14 @@
           <div class="model-tools">
             <label class="search-box"><Search size={16} /><input bind:value={search} oninput={searchAllModels} placeholder="Search every category" aria-label="Search every model category" /></label>
             <div class="capability-filter-controls" aria-label="Model capability filters">
-              <CapabilityFilter label="Input" modalities={inputCapabilities} value={inputCapability} tone="input" onselect={selectInputCapability} />
-              <CapabilityFilter label="Output" modalities={outputCapabilities} value={outputCapability} tone="output" onselect={selectOutputCapability} />
+              <select class="capability-select" bind:value={inputCapability} onchange={capabilityFiltersChanged} aria-label="Filter models by input capability">
+                <option value="all">Any input</option>
+                {#each inputCapabilities as modality (modality)}<option value={modality}>{displayModalityName(modality)}</option>{/each}
+              </select>
+              <select class="capability-select" bind:value={outputCapability} onchange={capabilityFiltersChanged} aria-label="Filter models by output capability">
+                <option value="all">Any output</option>
+                {#each outputCapabilities as modality (modality)}<option value={modality}>{displayModalityName(modality)}</option>{/each}
+              </select>
               {#if inputCapability !== "all" || outputCapability !== "all"}
                 <button class="capability-filter-clear" type="button" onclick={clearCapabilityFilters} aria-label="Clear capability filters" title="Clear capability filters"><X size={13} /></button>
               {/if}
@@ -559,16 +568,7 @@
                   <th class="specialized-price-col">Input price</th>
                   <th class="specialized-price-col">Output price</th>
                 {:else}
-                  <th class="intelligence-col sortable-column" aria-sort={sort === "intelligence" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
-                    <button type="button" onclick={() => toggleSort("intelligence")}>
-                      AA Index
-                      {#if sort === "intelligence"}
-                        {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
-                      {:else}
-                        <ArrowUpDown size={13} />
-                      {/if}
-                    </button>
-                  </th>
+                  {@render sortableHeader("intelligence", "AA Index", "intelligence-col")}
                 {/if}
                 {#if filter === "free"}
                   <th class="limit-col">Max output</th>
@@ -576,38 +576,11 @@
                 {:else if filter === "specialized"}
                   <th class="modality-col">Input / output</th>
                 {:else}
-                  <th class="input-col sortable-column" aria-sort={sort === "input" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
-                    <button type="button" onclick={() => toggleSort("input")}>
-                      Input / 1M
-                      {#if sort === "input"}
-                        {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
-                      {:else}
-                        <ArrowUpDown size={13} />
-                      {/if}
-                    </button>
-                  </th>
-                  <th class="output-col sortable-column" aria-sort={sort === "output" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
-                    <button type="button" onclick={() => toggleSort("output")}>
-                      Output / 1M
-                      {#if sort === "output"}
-                        {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
-                      {:else}
-                        <ArrowUpDown size={13} />
-                      {/if}
-                    </button>
-                  </th>
+                  {@render sortableHeader("input", "Input / 1M", "input-col")}
+                  {@render sortableHeader("output", "Output / 1M", "output-col")}
                 {/if}
                 {#if filter === "changed"}
-                  <th class="movement-col sortable-column" aria-sort={sort === "changed" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
-                    <button type="button" onclick={() => toggleSort("changed")}>
-                      Price move recorded
-                      {#if sort === "changed"}
-                        {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
-                      {:else}
-                        <ArrowUpDown size={13} />
-                      {/if}
-                    </button>
-                  </th>
+                  {@render sortableHeader("changed", "Price move recorded", "movement-col")}
                 {/if}
                 {#if filter === "all"}
                   <th class="modality-col">Input / output</th>
@@ -615,16 +588,7 @@
                 {#if filter === "free"}
                   <th class="limit-col">Requests / day</th>
                 {:else if filter !== "changed" && filter !== "specialized"}
-                  <th class="monthly-col sortable-column" aria-sort={sort === "monthly" ? sortDirection === "asc" ? "ascending" : "descending" : "none"}>
-                    <button type="button" onclick={() => toggleSort("monthly")}>
-                      Monthly est.
-                      {#if sort === "monthly"}
-                        {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
-                      {:else}
-                        <ArrowUpDown size={13} />
-                      {/if}
-                    </button>
-                  </th>
+                  {@render sortableHeader("monthly", "Monthly est.", "monthly-col")}
                 {/if}
                 <th class="action-col" aria-label="Model actions"></th>
               </tr>
@@ -640,7 +604,7 @@
                     <td class="specialized-price-col"><SpecializedRates rates={model.specializedPricing?.input ?? []} /></td>
                     <td class="specialized-price-col"><SpecializedRates rates={model.specializedPricing?.output ?? []} /></td>
                   {:else}
-                    <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></td>
+                    <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<meter min="0" max="100" value={Math.min(100, model.intelligence)} aria-label={`AA Index ${model.intelligence}`}></meter>{/if}</span></td>
                   {/if}
                   {#if filter === "free"}
                     <td class="limit-col limit-cell"><strong>{formatTokenLimit(model.maxCompletionTokens)}</strong>{#if model.maxCompletionTokens !== null}<span>tokens</span>{/if}</td>
@@ -685,65 +649,6 @@
               {/each}
             </tbody>
           </table>
-          <div class="model-card-list">
-            {#each pageModels as model (model.id)}
-              {@const estimatedCost = monthlyCost(model)}
-              {@const inComparison = comparisonIds.includes(model.id)}
-              <article class="model-card">
-                <div class="model-card-heading">
-                  <button class="model-identity" onclick={() => selectedModel = model}>
-                    <ProviderLogo provider={model.provider} size="small" />
-                    <span><strong>{displayModelName(model.name)}</strong></span>
-                  </button>
-                </div>
-                <dl class="model-card-metrics">
-                  <div class:model-card-wide={filter === "specialized"}><dt>Context window</dt><dd>{formatContextLength(model.contextLength)}</dd></div>
-                  {#if filter !== "specialized"}
-                    <div>
-                      <dt>AA Index</dt>
-                      <dd><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<i style={`width: ${Math.min(100, model.intelligence)}%`}></i>{/if}</span></dd>
-                    </div>
-                  {/if}
-                  {#if filter === "free"}
-                    <div><dt>Max output</dt><dd>{formatTokenLimit(model.maxCompletionTokens)}{#if model.maxCompletionTokens !== null}<small> tokens</small>{/if}</dd></div>
-                    <div><dt>Requests / min</dt><dd>20 <small>shared</small></dd></div>
-                    <div><dt>Requests / day</dt><dd>50 / 1,000 <small>shared</small></dd></div>
-                  {:else if model.pricingBasis === "specialized"}
-                    {#if filter === "specialized"}
-                      <div><dt>Input price</dt><dd><SpecializedRates rates={model.specializedPricing?.input ?? []} /></dd></div>
-                      <div><dt>Output price</dt><dd><SpecializedRates rates={model.specializedPricing?.output ?? []} /></dd></div>
-                      <div class="model-card-wide"><dt>Input / output</dt><dd><ModelModalities inputModalities={model.inputModalities} outputModalities={model.outputModalities} /></dd></div>
-                    {/if}
-                  {:else if hasTokenPricing(model)}
-                    <div>
-                      <dt>Input / 1M</dt>
-                      <dd><span class="price-with-move"><span>{formatPrice(model.inputPrice)}</span>{#if model.inputPriceChangePercent !== null && Math.abs(model.inputPriceChangePercent) >= 0.001}<PriceChange value={model.inputPriceChangePercent} detail={priceMoveDetail(model, "input")} />{/if}</span></dd>
-                    </div>
-                    <div>
-                      <dt>Output / 1M</dt>
-                      <dd><span class="price-with-move"><span>{formatPrice(model.outputPrice)}</span>{#if model.outputPriceChangePercent !== null && Math.abs(model.outputPriceChangePercent) >= 0.001}<PriceChange value={model.outputPriceChangePercent} detail={priceMoveDetail(model, "output")} />{/if}</span></dd>
-                    </div>
-                  {/if}
-                  {#if filter === "changed"}
-                    <div class="model-card-wide"><dt>Price move recorded</dt><dd>{model.priceChangeRecordedAt ? formatSyncTime(model.priceChangeRecordedAt) : "Unavailable"}</dd></div>
-                  {:else if filter !== "free" && estimatedCost !== null}
-                    <div class="model-card-wide model-card-monthly"><dt>Monthly estimate</dt><dd>{money.format(estimatedCost)}</dd></div>
-                  {/if}
-                </dl>
-                <div class="model-card-actions">
-                  <button
-                    class:active={inComparison}
-                    onclick={() => toggleComparison(model.id)}
-                    disabled={!inComparison && comparisonIds.length >= COMPARISON_LIMIT}
-                    aria-pressed={inComparison}
-                  >
-                    {#if inComparison}<Check size={15} />Remove from compare{:else}<Plus size={15} />Add to compare{/if}
-                  </button>
-                  <button onclick={() => selectedModel = model}>Details <ChevronRight size={15} /></button>
-                </div>
-              </article>
-            {/each}
-          </div>
           {#if matchingModels.length === 0}
             <div class="no-results"><Search size={23} /><strong>No models in this view</strong><p>Try another filter or clear your search.</p></div>
           {/if}

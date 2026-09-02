@@ -33,7 +33,7 @@
 ## Database
 
 - Development defaults to `file:.data/model-radar.db`; Turso needs both `DATABASE_URL` and `DATABASE_AUTH_TOKEN`.
-- Schema setup is automatic and versioned in `src/lib/server/db/client.ts`; there is no Drizzle Kit migration workflow. Any schema change must update both `src/lib/server/db/schema.ts` and the ordered migration list in `client.ts`.
+- Schema setup is automatic and versioned in the ordered migration list in `src/lib/server/db/client.ts`; update that list for every schema change.
 - Snapshot writes are batched in groups of 100 for Turso. Preserve batching and idempotent upserts when changing persistence.
 
 ## Security And Deployment

@@ -60,22 +60,6 @@
           {/each}
         </tbody>
       </table>
-      <ol class="recommendation-mobile-list">
-        {#each models as model, index (model.id)}
-          <li>
-            <div class="recommendation-mobile-heading">
-              <span class="recommendation-rank" aria-label={`Rank ${index + 1}`}>{index + 1}</span>
-              <ProviderLogo provider={model.provider} />
-              <h3><button type="button" onclick={() => onselect(model)}>{displayModelName(model.name)}</button></h3>
-            </div>
-            <dl>
-              <div><dt>Context</dt><dd>{formatTokenCount(model.contextLength)}</dd></div>
-              <div><dt>Input / 1M</dt><dd>{model.inputPrice === null ? "-" : formatPrice(model.inputPrice)}</dd></div>
-              <div><dt>Output / 1M</dt><dd>{model.outputPrice === null ? "-" : formatPrice(model.outputPrice)}</dd></div>
-            </dl>
-          </li>
-        {/each}
-      </ol>
     </div>
   {:else}
     <div class="recommendation-empty">

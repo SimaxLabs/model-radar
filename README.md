@@ -1,6 +1,6 @@
 # Model Radar
 
-Model Radar is a Svelte 5 and SvelteKit application for exploring paid AI models from OpenRouter, tracking comparable token prices, and comparing models with independent Artificial Analysis benchmarks supplied through OpenRouter. Daily token prices are persisted through Drizzle and libSQL, using a local file during development or Turso in production.
+Model Radar is a Svelte 5 and SvelteKit application for exploring paid AI models from OpenRouter, tracking comparable token prices, and comparing models with independent Artificial Analysis benchmarks supplied through OpenRouter. Daily token prices are persisted through libSQL, using a local file during development or Turso in production.
 
 ## Features
 
@@ -24,7 +24,7 @@ Model Radar is a Svelte 5 and SvelteKit application for exploring paid AI models
 
 - Svelte 5.56 and SvelteKit 2.70, powered by Vite 8
 - SvelteKit Node adapter
-- Drizzle ORM with `@libsql/client`
+- `@libsql/client`
 - Turso Cloud in production or a local libSQL file in development
 - Vitest, ESLint, and `svelte-check`
 

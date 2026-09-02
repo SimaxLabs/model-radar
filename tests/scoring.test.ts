@@ -25,7 +25,6 @@ function radarModel(
     blendedPrice,
     previousInputPrice: null,
     previousOutputPrice: null,
-    priceChangeBaselineAt: null,
     priceChangeRecordedAt: null,
     inputPriceChangePercent: null,
     outputPriceChangePercent: null,
@@ -35,7 +34,6 @@ function radarModel(
     intelligenceRank: null,
     segment: isCheap ? "cheap" : "standard",
     isCheap,
-    isStateOfTheArt: false,
     valueScore: null,
   };
 }
