@@ -3,12 +3,14 @@
   import { displayModelName, formatChange, formatPrice, formatTokenCount, money } from "$lib/format";
   import type { RadarModel } from "$lib/types";
   import ModelModalities from "$lib/components/ModelModalities.svelte";
+  import SpecializedRates from "$lib/components/SpecializedRates.svelte";
 
   type ComparisonMetric = {
     label: string;
     value: (model: RadarModel) => number | null;
     display: (model: RadarModel) => string;
     preference?: "high" | "low";
+    specializedRate?: "input" | "output";
   };
 
   let {
@@ -56,18 +58,21 @@
       preference: "high",
     },
   ];
+  // ponytail: Show native units directly; heterogeneous specialized rates cannot be ranked safely.
   const priceMetrics: ComparisonMetric[] = [
     {
-      label: "Input / 1M",
+      label: "Input price",
       value: (model) => model.inputPrice,
-      display: (model) => model.inputPrice === null ? "N/A" : formatPrice(model.inputPrice),
+      display: (model) => model.inputPrice === null ? "N/A" : `${formatPrice(model.inputPrice)} / 1M text tokens`,
       preference: "low",
+      specializedRate: "input",
     },
     {
-      label: "Output / 1M",
+      label: "Output price",
       value: (model) => model.outputPrice,
-      display: (model) => model.outputPrice === null ? "N/A" : formatPrice(model.outputPrice),
+      display: (model) => model.outputPrice === null ? "N/A" : `${formatPrice(model.outputPrice)} / 1M text tokens`,
       preference: "low",
+      specializedRate: "output",
     },
     {
       label: "Your monthly",
@@ -159,7 +164,11 @@
               {#each models as model (model.id)}
                 {@const best = isBest(metric, model)}
                 <td class:comparison-best={best}>
-                  <strong>{metric.display(model)}</strong>
+                  {#if metric.specializedRate && model.pricingBasis === "specialized"}
+                    <div><SpecializedRates rates={model.specializedPricing?.[metric.specializedRate] ?? []} /></div>
+                  {:else}
+                    <strong>{metric.display(model)}</strong>
+                  {/if}
                   {#if best}<span>Best</span>{/if}
                 </td>
               {/each}
