@@ -65,6 +65,26 @@ function positivePrice(value: string | undefined) {
   return Number.isFinite(price) && price > 0 ? price : null;
 }
 
+const TRANSCRIPTION_DURATION_UNITS: Record<string, "second" | "minute" | "hour"> = {
+  "nvidia/nemotron-3.5-asr-streaming-multilingual-0.6b": "second",
+  "mistralai/voxtral-small-24b-2507-stt": "second",
+  "mistralai/voxtral-mini-3b-2507": "second",
+  "qwen/qwen3-asr-1.7b": "second",
+  "qwen/qwen3-asr-0.6b": "second",
+  "fish-audio/transcribe-1": "second",
+  "qwen/qwen3-asr-flash-2026-02-10": "second",
+  "openai/whisper-large-v3": "second",
+  "openai/whisper-large-v3-turbo": "second",
+  "openai/gpt-transcribe": "minute",
+  "deepgram/nova-3": "minute",
+  "nvidia/parakeet-tdt-0.6b-v3": "minute",
+  "mistralai/voxtral-mini-transcribe": "minute",
+  "google/chirp-3": "minute",
+  "openai/whisper-1": "minute",
+  "x-ai/grok-stt-1.0": "hour",
+  "microsoft/mai-transcribe-1.5": "hour",
+};
+
 function getVideoRate(sku: string, value: string): { side: "input" | "output"; rate: SpecializedRate } | null {
   const rawPrice = positivePrice(value);
   if (rawPrice === null) return null;
@@ -121,6 +141,13 @@ function getVideoRate(sku: string, value: string): { side: "input" | "output"; r
     };
   }
 
+  if (sku === "minimum_cents_per_generation") {
+    return {
+      side: "output",
+      rate: { label: "Minimum charge", price: rawPrice / 100, unit: "generation" },
+    };
+  }
+
   // ponytail: Unknown SKU names are omitted rather than assigned a guessed unit.
   return null;
 }
@@ -128,52 +155,120 @@ function getVideoRate(sku: string, value: string): { side: "input" | "output"; r
 function getSpecializedPricing(model: OpenRouterModel): SpecializedPricing {
   const input: SpecializedRate[] = [];
   const output: SpecializedRate[] = [];
-  const hasSpeechOutput = model.architecture.output_modalities.includes("speech");
-  const hasTranscriptionOutput = model.architecture.output_modalities.includes("transcription");
+  const outputModalities = model.architecture.output_modalities;
   const prompt = positivePrice(model.pricing.prompt);
   const completion = positivePrice(model.pricing.completion);
   const audio = positivePrice(model.pricing.audio);
   const audioOutput = positivePrice(model.pricing.audio_output);
   const image = positivePrice(model.pricing.image);
   const imageToken = positivePrice(model.pricing.image_token);
-  const imageOutput = positivePrice(model.pricing.image_output);
   const request = positivePrice(model.pricing.request);
 
-  if (prompt !== null) {
-    if (hasSpeechOutput) {
-      input.push({ label: "Text", price: prompt * MILLION, unit: "1M characters" });
-    } else if (!hasTranscriptionOutput) {
-      input.push({ label: "Text", price: prompt * MILLION, unit: "1M text tokens" });
+  if (request !== null) input.push({ label: "Request", price: request, unit: "request" });
+
+  if (model.imagePricing?.length) {
+    for (const price of model.imagePricing) {
+      if (price.cost_usd <= 0) continue;
+      const side = price.billable === "output_image" ? "output" : "input";
+      let label = price.billable === "output_image"
+        ? "Image"
+        : price.billable === "input_image"
+          ? "Image"
+          : price.billable === "input_text"
+            ? "Text"
+            : price.billable === "input_reference"
+              ? "Reference"
+              : price.billable === "input_font"
+                ? "Font"
+                : null;
+      if (!label) continue;
+      if (price.variant) {
+        const variant = price.variant.replaceAll("_", " ").replace(/\b(\d+)k\b/gi, "$1K");
+        label += ` (${variant}${price.provider ? `, ${price.provider}` : ""})`;
+      } else if (price.provider) {
+        label += ` (${price.provider})`;
+      }
+
+      let unit: SpecializedRate["unit"];
+      let value = price.cost_usd;
+      if (price.unit === "token") {
+        value *= MILLION;
+        unit = price.billable === "input_text" ? "1M text tokens" : "1M image tokens";
+      } else if (price.unit === "image") {
+        unit = side === "output" ? "output image" : "input image";
+      } else if (price.unit === "megapixel") {
+        unit = side === "output" ? "output megapixel" : "input megapixel";
+      } else if (price.unit === "request") {
+        unit = "request";
+      } else {
+        continue;
+      }
+      (side === "output" ? output : input).push({ label, price: value, unit });
     }
-  }
-  if (audio !== null) {
-    input.push({ label: "Audio", price: audio * MILLION, unit: "1M audio tokens" });
-  }
-  if (image !== null) {
-    input.push({ label: "Image", price: image, unit: "input image" });
-  }
-  if (request !== null) {
-    input.push({ label: "Request", price: request, unit: "request" });
-  }
-  if (completion !== null) {
-    output.push({ label: "Text", price: completion * MILLION, unit: "1M text tokens" });
-  }
-  if (audioOutput !== null) {
-    output.push({ label: "Audio", price: audioOutput * MILLION, unit: "1M audio tokens" });
-  }
-  if (imageToken !== null && imageOutput === imageToken) {
-    output.push({ label: "Image", price: imageToken * MILLION, unit: "1M image tokens" });
-  } else {
-    if (imageToken !== null) {
-      output.push({ label: "Image", price: imageToken * MILLION, unit: "1M image tokens" });
+    if (outputModalities.includes("text")) {
+      if (prompt !== null && !model.imagePricing.some((price) => price.billable === "input_text")) {
+        input.push({ label: "Text", price: prompt * MILLION, unit: "1M text tokens" });
+      }
+      if (completion !== null) output.push({ label: "Text", price: completion * MILLION, unit: "1M text tokens" });
     }
-    if (imageOutput !== null) {
-      output.push({ label: "Image", price: imageOutput, unit: "output image" });
-    }
+    return { input, output };
   }
-  for (const [sku, value] of Object.entries(model.pricing_skus ?? {})) {
-    const videoRate = getVideoRate(sku, value);
-    if (videoRate) (videoRate.side === "input" ? input : output).push(videoRate.rate);
+
+  if (outputModalities.includes("image")) {
+    // ponytail: Generic image_output lacks a reliable unit; only its explicit image_token alias is safe.
+    if (imageToken !== null) output.push({ label: "Image", price: imageToken * MILLION, unit: "1M image tokens" });
+    return { input, output };
+  }
+
+  if (outputModalities.includes("video")) {
+    for (const [sku, value] of Object.entries(model.pricing_skus ?? {})) {
+      const videoRate = getVideoRate(sku, value);
+      if (videoRate) (videoRate.side === "input" ? input : output).push(videoRate.rate);
+    }
+    return { input, output };
+  }
+
+  if (outputModalities.includes("transcription")) {
+    if (completion !== null) {
+      if (prompt !== null) input.push({ label: "Input", price: prompt * MILLION, unit: "1M text tokens" });
+      output.push({ label: "Output", price: completion * MILLION, unit: "1M text tokens" });
+    } else {
+      const unit = TRANSCRIPTION_DURATION_UNITS[model.id];
+      if (prompt !== null && unit) input.push({ label: "Audio", price: prompt, unit });
+    }
+    return { input, output };
+  }
+
+  if (outputModalities.includes("speech")) {
+    if (completion !== null) {
+      if (prompt !== null) input.push({ label: "Text", price: prompt * MILLION, unit: "1M text tokens" });
+      output.push({ label: "Audio", price: completion * MILLION, unit: "1M audio tokens" });
+    } else if (prompt !== null) {
+      input.push({
+        label: "Text",
+        price: prompt * MILLION,
+        unit: model.id.startsWith("fish-audio/") ? "1M UTF-8 bytes" : "1M characters",
+      });
+    }
+    return { input, output };
+  }
+
+  if (outputModalities.includes("embeddings")) {
+    if (prompt !== null) input.push({ label: "Text", price: prompt * MILLION, unit: "1M text tokens" });
+    if (image !== null && model.architecture.input_modalities.includes("image")) {
+      input.push({ label: "Image", price: image * MILLION, unit: "1M image tokens" });
+    }
+    if (audio !== null && model.architecture.input_modalities.includes("audio")) {
+      input.push({ label: "Audio", price: audio * MILLION, unit: "1M audio tokens" });
+    }
+    return { input, output };
+  }
+
+  if (outputModalities.includes("audio")) {
+    if (prompt !== null) input.push({ label: "Text", price: prompt * MILLION, unit: "1M text tokens" });
+    if (audio !== null) input.push({ label: "Audio", price: audio * MILLION, unit: "1M audio tokens" });
+    if (completion !== null) output.push({ label: "Text", price: completion * MILLION, unit: "1M text tokens" });
+    if (audioOutput !== null) output.push({ label: "Audio", price: audioOutput * MILLION, unit: "1M audio tokens" });
   }
 
   return { input, output };
@@ -185,6 +280,7 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
   const snapshotDate = generatedAt.slice(0, 10);
   const cheapThreshold = positiveNumber(env.CHEAP_MODEL_MAX_PRICE, 1);
   const openRouterModels = await fetchOpenRouterModels(force);
+  const mediaPricingComplete = openRouterModels.every((model) => model.mediaPricingComplete !== false);
 
   let databaseStatus: RadarData["sources"]["database"];
 
@@ -342,9 +438,11 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
     },
     sources: {
       openRouter: {
-        state: "live",
-        label: "Pricing live",
-        detail: "Current token-priced and specialized models from OpenRouter.",
+        state: mediaPricingComplete ? "live" : "unavailable",
+        label: mediaPricingComplete ? "Pricing live" : "Some pricing unavailable",
+        detail: mediaPricingComplete
+          ? "Current token-priced and specialized models from OpenRouter."
+          : "Core model data is live, but some specialized pricing could not be refreshed.",
       },
       benchmarks:
         rankedCount > 0

@@ -66,6 +66,10 @@ describe("OpenRouter models", () => {
       "https://openrouter.ai/api/v1/videos/models",
       expect.any(Object),
     );
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://openrouter.ai/api/v1/images/models",
+      expect.any(Object),
+    );
   });
 
   it("merges dedicated video pricing into specialized models", async () => {
@@ -83,6 +87,8 @@ describe("OpenRouter models", () => {
                     },
                   ],
                 }
+              : String(input).includes("/images/models")
+                ? { data: [] }
               : {
                   data: [
                     {
@@ -112,6 +118,66 @@ describe("OpenRouter models", () => {
       duration_seconds: "0.13",
       reference_images: "0.04",
     });
+  });
+
+  it("merges definitive image endpoint pricing", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        const url = String(input);
+        const data = url.endsWith("/api/v1/videos/models")
+          ? { data: [] }
+          : url.endsWith("/api/v1/images/models")
+            ? {
+                data: [
+                  {
+                    id: "recraft/recraft-v4-styles-pro",
+                    endpoints: "/api/v1/images/models/recraft/recraft-v4-styles-pro/endpoints",
+                  },
+                ],
+              }
+            : url.endsWith("/api/v1/images/models/recraft/recraft-v4-styles-pro/endpoints")
+              ? {
+                  endpoints: [
+                    {
+                      provider_name: "Recraft",
+                      pricing: [
+                        { billable: "output_image", unit: "image", cost_usd: 0.1 },
+                        { billable: "input_reference", unit: "request", cost_usd: 0.005 },
+                      ],
+                    },
+                  ],
+                }
+              : {
+                  data: [
+                    {
+                      id: "recraft/recraft-v4-styles-pro",
+                      canonical_slug: "recraft/recraft-v4-styles-pro",
+                      name: "Recraft: Recraft V4 Styles Pro",
+                      context_length: 0,
+                      created: 1_787_742_640,
+                      expiration_date: null,
+                      architecture: {
+                        input_modalities: ["text", "image"],
+                        output_modalities: ["image"],
+                      },
+                      pricing: { prompt: "0", completion: "0" },
+                    },
+                  ],
+                };
+        return new Response(JSON.stringify(data), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const models = await fetchOpenRouterModels(true);
+
+    expect(models[0]?.imagePricing).toEqual([
+      { billable: "output_image", unit: "image", cost_usd: 0.1 },
+      { billable: "input_reference", unit: "request", cost_usd: 0.005 },
+    ]);
   });
 
   it("keeps free and batch variants while excluding other zero-priced routes", async () => {

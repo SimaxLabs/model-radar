@@ -36,6 +36,8 @@ export interface OpenRouterModel {
     audio_output?: string;
   };
   pricing_skus?: Record<string, string>;
+  imagePricing?: OpenRouterImagePrice[];
+  mediaPricingComplete?: boolean;
   top_provider?: {
     max_completion_tokens: number | null;
   };
@@ -46,6 +48,14 @@ export interface OpenRouterModel {
       agentic_index: number | null;
     };
   };
+}
+
+export interface OpenRouterImagePrice {
+  billable: string;
+  unit: string;
+  cost_usd: number;
+  variant?: string;
+  provider?: string;
 }
 
 export type ModelSegment = "state-of-the-art" | "cheap" | "standard" | "specialized" | "free" | "batch";
@@ -60,10 +70,16 @@ export interface SpecializedRate {
     | "1M audio tokens"
     | "1M image tokens"
     | "1M video tokens"
+    | "1M UTF-8 bytes"
     | "input image"
     | "output image"
+    | "input megapixel"
+    | "output megapixel"
     | "image"
     | "second"
+    | "minute"
+    | "hour"
+    | "generation"
     | "megapixel-second"
     | "request";
 }
