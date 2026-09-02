@@ -206,6 +206,10 @@
         );
       });
   });
+  let specializedView = $derived(
+    filter === "specialized" ||
+    (filter === "search" && matchingModels.length > 0 && matchingModels.every((model) => model.pricingBasis === "specialized")),
+  );
   let totalPages = $derived(Math.max(1, Math.ceil(matchingModels.length / PAGE_SIZE)));
   let currentPage = $derived(Math.min(pageNumber, totalPages));
   let pageModels = $derived(
@@ -564,7 +568,7 @@
               <tr>
                 <th class="model-col">Model</th>
                 <th class="context-col">Context</th>
-                {#if filter === "specialized"}
+                {#if specializedView}
                   <th class="specialized-price-col">Input price</th>
                   <th class="specialized-price-col">Output price</th>
                 {:else}
@@ -573,11 +577,11 @@
                 {#if filter === "free"}
                   <th class="limit-col">Max output</th>
                   <th class="limit-col">Requests / min</th>
-                {:else if filter === "specialized"}
+                {:else if specializedView}
                   <th class="modality-col">Input / output</th>
                 {:else}
-                  {@render sortableHeader("input", "Input / 1M", "input-col")}
-                  {@render sortableHeader("output", "Output / 1M", "output-col")}
+                  {@render sortableHeader("input", filter === "all" || filter === "search" ? "Input price" : "Input / 1M", "input-col")}
+                  {@render sortableHeader("output", filter === "all" || filter === "search" ? "Output price" : "Output / 1M", "output-col")}
                 {/if}
                 {#if filter === "changed"}
                   {@render sortableHeader("changed", "Price move recorded", "movement-col")}
@@ -587,7 +591,7 @@
                 {/if}
                 {#if filter === "free"}
                   <th class="limit-col">Requests / day</th>
-                {:else if filter !== "changed" && filter !== "specialized"}
+                {:else if filter !== "changed" && !specializedView}
                   {@render sortableHeader("monthly", "Monthly est.", "monthly-col")}
                 {/if}
                 <th class="action-col" aria-label="Model actions"></th>
@@ -600,7 +604,7 @@
                 <tr>
                   <td class="model-col"><button class="model-identity" onclick={() => selectedModel = model}><ProviderLogo provider={model.provider} size="small" /><span><strong>{displayModelName(model.name)}</strong></span></button></td>
                   <td class="context-col">{formatContextLength(model.contextLength)}</td>
-                  {#if filter === "specialized"}
+                  {#if specializedView}
                     <td class="specialized-price-col"><SpecializedRates rates={model.specializedPricing?.input ?? []} /></td>
                     <td class="specialized-price-col"><SpecializedRates rates={model.specializedPricing?.output ?? []} /></td>
                   {:else}
@@ -609,8 +613,11 @@
                   {#if filter === "free"}
                     <td class="limit-col limit-cell"><strong>{formatTokenLimit(model.maxCompletionTokens)}</strong>{#if model.maxCompletionTokens !== null}<span>tokens</span>{/if}</td>
                     <td class="limit-col limit-cell"><strong>20</strong><span>shared</span></td>
-                  {:else if filter === "specialized"}
+                  {:else if specializedView}
                     <td class="modality-col specialized-route-cell"><ModelModalities inputModalities={model.inputModalities} outputModalities={model.outputModalities} /></td>
+                  {:else if model.pricingBasis === "specialized"}
+                    <td class="input-col specialized-price-col"><SpecializedRates rates={model.specializedPricing?.input ?? []} /></td>
+                    <td class="output-col specialized-price-col"><SpecializedRates rates={model.specializedPricing?.output ?? []} /></td>
                   {:else if hasTokenPricing(model)}
                     <td class="input-col"><span class="price-with-move"><span>{formatPrice(model.inputPrice)}</span>{#if model.inputPriceChangePercent !== null && Math.abs(model.inputPriceChangePercent) >= 0.001}<PriceChange value={model.inputPriceChangePercent} detail={priceMoveDetail(model, "input")} />{/if}</span></td>
                     <td class="output-col"><span class="price-with-move"><span>{formatPrice(model.outputPrice)}</span>{#if model.outputPriceChangePercent !== null && Math.abs(model.outputPriceChangePercent) >= 0.001}<PriceChange value={model.outputPriceChangePercent} detail={priceMoveDetail(model, "output")} />{/if}</span></td>
@@ -626,7 +633,7 @@
                   {/if}
                   {#if filter === "free"}
                     <td class="limit-col limit-cell"><strong>50 / 1,000</strong><span>shared</span></td>
-                  {:else if filter !== "changed" && filter !== "specialized"}
+                  {:else if filter !== "changed" && !specializedView}
                     <td class="monthly-col"><strong>{estimatedCost === null ? "N/A" : money.format(estimatedCost)}</strong></td>
                   {/if}
                   <td class="action-col">
