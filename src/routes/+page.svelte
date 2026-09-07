@@ -317,15 +317,17 @@
 <div class="app-shell">
   <main class="main-content" id="top">
     <header class="topbar">
-      <div class="topbar-left">
-        <a class="topbar-brand" href="#top" aria-label="Model Radar" onclick={() => activeSection = "radar"}><img class="brand-icon" src={`${base}/model-radar.svg`} alt="" /><span>Model Radar</span></a>
+      <div class="topbar-inner">
+        <div class="topbar-left">
+          <a class="topbar-brand" href="#top" aria-label="Model Radar" onclick={() => activeSection = "radar"}><img class="brand-icon" src={`${base}/model-radar.svg`} alt="" /><span>Model Radar</span></a>
+        </div>
+        <nav class="topbar-nav" aria-label="Dashboard navigation">
+          <a class:active={activeSection === "radar"} href="#radar" aria-label="Overview" onclick={() => activeSection = "radar"}><Gauge size={16} /><span>Overview</span></a>
+          <a class:active={activeSection === "news"} href="#news" aria-label="News" onclick={() => activeSection = "news"}><Newspaper size={16} /><span>News</span></a>
+          <a class:active={activeSection === "models"} href="#models" aria-label="Models" onclick={() => activeSection = "models"}><Database size={16} /><span>Models</span></a>
+        </nav>
+        <a class="github-link" href="https://github.com/SimaxLabs/model-radar" target="_blank" rel="noreferrer" aria-label="View Model Radar on GitHub" title="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d={siGithub.path} /></svg></a>
       </div>
-      <nav class="topbar-nav" aria-label="Dashboard navigation">
-        <a class:active={activeSection === "radar"} href="#radar" aria-label="Overview" onclick={() => activeSection = "radar"}><Gauge size={16} /><span>Overview</span></a>
-        <a class:active={activeSection === "news"} href="#news" aria-label="News" onclick={() => activeSection = "news"}><Newspaper size={16} /><span>News</span></a>
-        <a class:active={activeSection === "models"} href="#models" aria-label="Models" onclick={() => activeSection = "models"}><Database size={16} /><span>Models</span></a>
-      </nav>
-      <a class="github-link" href="https://github.com/SimaxLabs/model-radar" target="_blank" rel="noreferrer" aria-label="View Model Radar on GitHub" title="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d={siGithub.path} /></svg></a>
     </header>
 
     <div class="page-wrap">
