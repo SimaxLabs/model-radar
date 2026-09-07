@@ -485,7 +485,7 @@ summary::marker {
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-top: 8px;
 }
@@ -522,7 +522,6 @@ summary::marker {
 }
 
 .metric-models::before { background: var(--orange); }
-.metric-specialized::before { background: #b77eff; }
 .metric-news::before { background: var(--green); }
 .metric-moves::before { background: var(--yellow); }
 
@@ -545,11 +544,6 @@ summary::marker {
 .metric-models .metric-card-top svg {
   background: rgba(255, 120, 10, 0.12);
   color: var(--orange-bright);
-}
-
-.metric-specialized .metric-card-top svg {
-  background: rgba(183, 126, 255, 0.13);
-  color: #c8a2ff;
 }
 
 .metric-news .metric-card-top svg {
@@ -1234,14 +1228,6 @@ summary::marker {
 
 .model-filter-note-batch strong {
   color: #8ab8ff;
-}
-
-.model-filter-note-specialized {
-  background: rgba(183, 126, 255, 0.06);
-}
-
-.model-filter-note-specialized strong {
-  color: #c8a2ff;
 }
 
 .table-wrap {

@@ -7,8 +7,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -66,17 +64,6 @@ jobs:
           username: ${{ secrets.REGISTRY_USER }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Generate image metadata
-        id: metadata
-        uses: docker/metadata-action@v6.2.0
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          flavor: latest=false
-          tags: |
-            type=sha,prefix=,format=long
-            type=ref,event=tag
-            type=raw,value=latest,enable={{is_default_branch}}
-
       - name: Build and push image
         uses: docker/build-push-action@v7.3.0
         with:
@@ -85,8 +72,7 @@ jobs:
           build-args: |
             BASE_PATH=${{ env.BASE_PATH }}
           push: true
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: mode=max

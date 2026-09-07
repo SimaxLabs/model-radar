@@ -18,7 +18,6 @@
     RefreshCw,
     Scale,
     Search,
-    Shapes,
     X,
   } from "@lucide/svelte";
   import ModelComparison from "$lib/components/ModelComparison.svelte";
@@ -33,8 +32,8 @@
   import type { RadarData, RadarModel } from "$lib/types";
   import type { PageData } from "./$types";
 
-  type Filter = "all" | "changed" | "specialized" | "free" | "batch" | "search";
-  type Sort = "changed" | "intelligence" | "input" | "output" | "monthly" | "name";
+  type Filter = "all" | "changed" | "free" | "batch" | "search";
+  type Sort = "changed" | "intelligence" | "input" | "output" | "monthly";
   type SortDirection = "asc" | "desc";
   const RECOMMENDATION_COUNT = 5;
   const COMPARISON_MIN = 2;
@@ -166,16 +165,11 @@
         if (filter === "changed" && (isSpecialVariant || !hasPriceChange(model))) return false;
         if (filter === "free" && model.segment !== "free") return false;
         if (filter === "batch" && model.segment !== "batch") return false;
-        if (filter === "specialized" && model.segment !== "specialized") return false;
         if (inputCapability !== "all" && !model.inputModalities.includes(inputCapability)) return false;
         if (outputCapability !== "all" && !model.outputModalities.includes(outputCapability)) return false;
         return !query || `${model.name} ${model.provider} ${model.id}`.toLowerCase().includes(query);
       })
       .sort((left, right) => {
-        if (sort === "name") {
-          return displayModelName(left.name).localeCompare(displayModelName(right.name)) *
-            (sortDirection === "asc" ? 1 : -1);
-        }
         let leftValue: number | null;
         let rightValue: number | null;
         if (sort === "changed") {
@@ -206,10 +200,6 @@
         );
       });
   });
-  let specializedView = $derived(
-    filter === "specialized" ||
-    (filter === "search" && matchingModels.length > 0 && matchingModels.every((model) => model.pricingBasis === "specialized")),
-  );
   let totalPages = $derived(Math.max(1, Math.ceil(matchingModels.length / PAGE_SIZE)));
   let currentPage = $derived(Math.min(pageNumber, totalPages));
   let pageModels = $derived(
@@ -220,7 +210,7 @@
     pageNumber = 1;
     if (search.trim()) {
       filter = "search";
-      if (sort === "changed" || sort === "name") {
+      if (sort === "changed") {
         sort = "intelligence";
         sortDirection = "desc";
       }
@@ -241,18 +231,14 @@
 
   function selectFilter(nextFilter: Filter) {
     const wasShowingChanges = filter === "changed";
-    const wasShowingSpecialized = filter === "specialized";
     filter = nextFilter;
     if (nextFilter === "changed") {
       sort = "changed";
       sortDirection = "desc";
-    } else if (nextFilter === "specialized") {
-      sort = "name";
-      sortDirection = "asc";
     } else if (nextFilter === "free") {
       sort = "intelligence";
       sortDirection = "desc";
-    } else if ((wasShowingChanges && sort === "changed") || (wasShowingSpecialized && sort === "name")) {
+    } else if (wasShowingChanges && sort === "changed") {
       sort = "intelligence";
       sortDirection = "desc";
     }
@@ -427,15 +413,10 @@
 
       <section class="metrics-grid" aria-label="Radar summary">
         <article class="metric-card metric-models">
-          <div class="metric-card-top"><span>On-demand models</span><Database size={16} /></div>
+          <div class="metric-card-top"><span>All paid models</span><Database size={16} /></div>
           <div class="metric-value"><strong>{radar.summary.paidModels}</strong><span>routes</span></div>
           <p>{radar.summary.rankedModels} token-priced routes ranked; {radar.summary.specializedModels} specialized</p>
         </article>
-        <a class="metric-card metric-card-link metric-specialized" href="#models" onclick={() => { activeSection = "models"; selectFilter("specialized"); }}>
-          <div class="metric-card-top"><span>Specialized models</span><Shapes size={16} /></div>
-          <div class="metric-value"><strong>{radar.summary.specializedModels}</strong><span>models</span></div>
-          <p>Image, audio, video, embedding, and other non-text outputs</p>
-        </a>
         <a class="metric-card metric-card-link metric-news" href="#news" onclick={() => activeSection = "news"}>
           <div class="metric-card-top"><span>New articles</span><Newspaper size={16} /></div>
           <div class="metric-value"><strong>{recentArticleCount}</strong><span>{recentArticleCount === 1 ? "article" : "articles"}</span></div>
@@ -515,7 +496,6 @@
             <span class="global-search-label">Search results <b>{matchingModels.length}</b></span>
           {/if}
           <button class:active={filter === "all"} aria-pressed={filter === "all"} onclick={() => selectFilter("all")}>All paid <span>{radar.summary.paidModels}</span></button>
-          <button class:active={filter === "specialized"} aria-pressed={filter === "specialized"} onclick={() => selectFilter("specialized")}>Specialized <span>{radar.summary.specializedModels}</span></button>
           <button class:active={filter === "free"} aria-pressed={filter === "free"} onclick={() => selectFilter("free")}>Free <span>{radar.summary.freeModels}</span></button>
           <button class:active={filter === "batch"} aria-pressed={filter === "batch"} onclick={() => selectFilter("batch")}>Batch <span>{radar.summary.batchModels}</span></button>
           <button class:active={filter === "changed"} aria-pressed={filter === "changed"} onclick={() => selectFilter("changed")}>Price changed <span>{radar.summary.priceChangedModels}</span></button>
@@ -530,30 +510,21 @@
             <strong>Asynchronous OpenRouter batches</strong>
             <span>Batch models are for text-only workloads that do not need an immediate response. OpenRouter uses a 24-hour completion window and typically charges 50% of standard per-token pricing.</span>
           </div>
-        {:else if filter === "specialized"}
-          <div class="model-filter-note model-filter-note-specialized" role="note">
-            <strong>Non-text output models</strong>
-            <span>Image, audio, video, embedding, and similar models use different pricing units. Available native rates are shown without cross-unit sorting, blended prices, workload estimates, rankings, or price history.</span>
-          </div>
         {/if}
 
         <div class="mobile-sort">
           <label>
             <span>Sort by</span>
             <select value={sort} onchange={changeSort}>
-              {#if filter === "specialized"}
-                <option value="name">Name</option>
-              {:else}
-                <option value="intelligence">AA Index</option>
-                {#if filter !== "free"}
-                  <option value="input">Input price</option>
-                  <option value="output">Output price</option>
-                {/if}
-                {#if filter === "changed"}
-                  <option value="changed">Price move recorded</option>
-                {:else if filter !== "free"}
-                  <option value="monthly">Monthly estimate</option>
-                {/if}
+              <option value="intelligence">AA Index</option>
+              {#if filter !== "free"}
+                <option value="input">Input price</option>
+                <option value="output">Output price</option>
+              {/if}
+              {#if filter === "changed"}
+                <option value="changed">Price move recorded</option>
+              {:else if filter !== "free"}
+                <option value="monthly">Monthly estimate</option>
               {/if}
             </select>
           </label>
@@ -568,17 +539,10 @@
               <tr>
                 <th class="model-col">Model</th>
                 <th class="context-col">Context</th>
-                {#if specializedView}
-                  <th class="specialized-price-col">Input price</th>
-                  <th class="specialized-price-col">Output price</th>
-                {:else}
-                  {@render sortableHeader("intelligence", "AA Index", "intelligence-col")}
-                {/if}
+                {@render sortableHeader("intelligence", "AA Index", "intelligence-col")}
                 {#if filter === "free"}
                   <th class="limit-col">Max output</th>
                   <th class="limit-col">Requests / min</th>
-                {:else if specializedView}
-                  <th class="modality-col">Input / output</th>
                 {:else}
                   {@render sortableHeader("input", filter === "all" || filter === "search" ? "Input price" : "Input / 1M", "input-col")}
                   {@render sortableHeader("output", filter === "all" || filter === "search" ? "Output price" : "Output / 1M", "output-col")}
@@ -591,7 +555,7 @@
                 {/if}
                 {#if filter === "free"}
                   <th class="limit-col">Requests / day</th>
-                {:else if filter !== "changed" && !specializedView}
+                {:else if filter !== "changed"}
                   {@render sortableHeader("monthly", "Monthly est.", "monthly-col")}
                 {/if}
                 <th class="action-col" aria-label="Model actions"></th>
@@ -604,17 +568,10 @@
                 <tr>
                   <td class="model-col"><button class="model-identity" onclick={() => selectedModel = model}><ProviderLogo provider={model.provider} size="small" /><span><strong>{displayModelName(model.name)}</strong></span></button></td>
                   <td class="context-col">{formatContextLength(model.contextLength)}</td>
-                  {#if specializedView}
-                    <td class="specialized-price-col"><SpecializedRates rates={model.specializedPricing?.input ?? []} /></td>
-                    <td class="specialized-price-col"><SpecializedRates rates={model.specializedPricing?.output ?? []} /></td>
-                  {:else}
-                    <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<meter min="0" max="100" value={Math.min(100, model.intelligence)} aria-label={`AA Index ${model.intelligence}`}></meter>{/if}</span></td>
-                  {/if}
+                  <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<meter min="0" max="100" value={Math.min(100, model.intelligence)} aria-label={`AA Index ${model.intelligence}`}></meter>{/if}</span></td>
                   {#if filter === "free"}
                     <td class="limit-col limit-cell"><strong>{formatTokenLimit(model.maxCompletionTokens)}</strong>{#if model.maxCompletionTokens !== null}<span>tokens</span>{/if}</td>
                     <td class="limit-col limit-cell"><strong>20</strong><span>shared</span></td>
-                  {:else if specializedView}
-                    <td class="modality-col specialized-route-cell"><ModelModalities inputModalities={model.inputModalities} outputModalities={model.outputModalities} /></td>
                   {:else if model.pricingBasis === "specialized"}
                     <td class="input-col specialized-price-col"><SpecializedRates rates={model.specializedPricing?.input ?? []} /></td>
                     <td class="output-col specialized-price-col"><SpecializedRates rates={model.specializedPricing?.output ?? []} /></td>
@@ -633,7 +590,7 @@
                   {/if}
                   {#if filter === "free"}
                     <td class="limit-col limit-cell"><strong>50 / 1,000</strong><span>shared</span></td>
-                  {:else if filter !== "changed" && !specializedView}
+                  {:else if filter !== "changed"}
                     <td class="monthly-col"><strong>{estimatedCost === null ? "N/A" : money.format(estimatedCost)}</strong></td>
                   {/if}
                   <td class="action-col">
