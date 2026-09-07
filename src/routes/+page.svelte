@@ -6,7 +6,6 @@
     ArrowUp,
     ArrowUpDown,
     Check,
-    ChevronDown,
     ChevronLeft,
     ChevronRight,
     CircleAlert,
@@ -15,11 +14,11 @@
     Gauge,
     Newspaper,
     Plus,
-    RefreshCw,
     Scale,
     Search,
     X,
   } from "@lucide/svelte";
+  import { siGithub } from "simple-icons";
   import ModelComparison from "$lib/components/ModelComparison.svelte";
   import ModelDetail from "$lib/components/ModelDetail.svelte";
   import ModelModalities from "$lib/components/ModelModalities.svelte";
@@ -29,7 +28,7 @@
   import SpecializedRates from "$lib/components/SpecializedRates.svelte";
   import { displayModalityName, displayModelName, formatPrice, formatSyncTime, formatTokenCount, money } from "$lib/format";
   import { hasTokenPricing, rankBudgetModels } from "$lib/scoring";
-  import type { RadarData, RadarModel } from "$lib/types";
+  import type { RadarModel } from "$lib/types";
   import type { PageData } from "./$types";
 
   type Filter = "all" | "changed" | "free" | "batch" | "search";
@@ -48,8 +47,7 @@
   });
 
   let { data }: { data: PageData } = $props();
-  let refreshedRadar = $state<RadarData | null>(null);
-  let radar = $derived(refreshedRadar ?? data.radar);
+  let radar = $derived(data.radar);
   let filter = $state<Filter>("all");
   let sort = $state<Sort>("intelligence");
   let sortDirection = $state<SortDirection>("desc");
@@ -63,8 +61,6 @@
   let selectedModel = $state<RadarModel | null>(null);
   let comparisonIds = $state<string[]>([]);
   let comparisonOpen = $state(false);
-  let refreshing = $state(false);
-  let refreshError = $state<string | null>(null);
   let activeSection = $state<"radar" | "news" | "models">("radar");
 
   let safeInputMillions = $derived(Number.isFinite(inputMillions) ? Math.max(0, inputMillions) : 0);
@@ -297,31 +293,6 @@
     comparisonIds = [];
     comparisonOpen = false;
   }
-
-  async function refresh() {
-    refreshing = true;
-    refreshError = null;
-    try {
-      const response = await fetch(`${base}/api/radar`, {
-        headers: { Accept: "application/json" },
-        cache: "no-store",
-      });
-      const payload = (await response.json()) as RadarData & { error?: string };
-      if (!response.ok) throw new Error(payload.error || "Refresh failed");
-      refreshedRadar = payload;
-      pageNumber = 1;
-      if (inputCapability !== "all" && !payload.models.some((model) => model.inputModalities.includes(inputCapability))) inputCapability = "all";
-      if (outputCapability !== "all" && !payload.models.some((model) => model.outputModalities.includes(outputCapability))) outputCapability = "all";
-      comparisonIds = comparisonIds.filter((modelId) =>
-        payload.models.some((model) => model.id === modelId),
-      );
-      if (comparisonIds.length < COMPARISON_MIN) comparisonOpen = false;
-    } catch (error) {
-      refreshError = error instanceof Error ? error.message : "Refresh failed";
-    } finally {
-      refreshing = false;
-    }
-  }
 </script>
 
 <svelte:head>
@@ -354,22 +325,7 @@
         <a class:active={activeSection === "news"} href="#news" aria-label="News" onclick={() => activeSection = "news"}><Newspaper size={16} /><span>News</span></a>
         <a class:active={activeSection === "models"} href="#models" aria-label="Models" onclick={() => activeSection = "models"}><Database size={16} /><span>Models</span></a>
       </nav>
-      <div class="topbar-actions">
-        <details class="source-menu">
-          <summary aria-label="Show live monitor status"><span class="live-indicator"><i></i>Live monitor</span><ChevronDown size={14} /></summary>
-          <div class="source-statuses">
-            <div class="source-menu-header"><strong>Data sources</strong></div>
-            {#each [radar.sources.openRouter, radar.sources.benchmarks, radar.sources.database] as source (source.label)}
-              <div class="source-pill" class:source-unavailable={source.state === "unavailable"} title={source.detail}>
-                <span class="status-dot"></span><span>{source.label}</span>
-              </div>
-            {/each}
-          </div>
-        </details>
-        <button class="refresh-button" onclick={refresh} disabled={refreshing}>
-          <RefreshCw size={15} class={refreshing ? "spinning" : undefined} /><span>{refreshing ? "Refreshing" : "Refresh"}</span>
-        </button>
-      </div>
+      <a class="github-link" href="https://github.com/SimaxLabs/model-radar" target="_blank" rel="noreferrer" aria-label="View Model Radar on GitHub" title="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d={siGithub.path} /></svg></a>
     </header>
 
     <div class="page-wrap">
@@ -386,10 +342,6 @@
       {#if radar.sources.database.state !== "live"}
         <div class="error-banner"><CircleAlert size={17} /> {radar.sources.database.detail}</div>
       {/if}
-      {#if refreshError}
-        <div class="error-banner"><CircleAlert size={17} /> {refreshError}</div>
-      {/if}
-
       <section class="dashboard-heading" id="radar">
         <div class="dashboard-title">
           <h1>AI model overview</h1>
@@ -398,11 +350,11 @@
       </section>
 
       <section class="metrics-grid" aria-label="Radar summary">
-        <article class="metric-card metric-models">
+        <a class="metric-card metric-card-link metric-models" href="#models" onclick={() => { activeSection = "models"; selectFilter("all"); }}>
           <div class="metric-card-top"><span>All paid models</span><Database size={16} /></div>
           <div class="metric-value"><strong>{radar.summary.paidModels}</strong><span>routes</span></div>
           <p>{radar.summary.rankedModels} token-priced routes ranked; {radar.summary.specializedModels} specialized</p>
-        </article>
+        </a>
         <a class="metric-card metric-card-link metric-news" href="#news" onclick={() => activeSection = "news"}>
           <div class="metric-card-top"><span>New articles</span><Newspaper size={16} /></div>
           <div class="metric-value"><strong>{recentArticleCount}</strong><span>{recentArticleCount === 1 ? "article" : "articles"}</span></div>
