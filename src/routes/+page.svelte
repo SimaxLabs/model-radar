@@ -397,20 +397,6 @@
         </div>
       </section>
 
-      <section class="token-calculator" aria-label="Monthly workload controls">
-        <div class="calculator-heading">
-          <span class="panel-icon"><Gauge size={17} /></span>
-          <div>
-            <strong>Monthly workload</strong>
-            <p>Cost estimates for token-priced models use these volumes; specialized models are excluded.</p>
-          </div>
-        </div>
-        <div class="calculator-fields">
-          <label><span>Input tokens</span><div><input type="number" min="0" step="1" bind:value={inputMillions} /><b>million</b></div></label>
-          <label><span>Output tokens</span><div><input type="number" min="0" step="1" bind:value={outputMillions} /><b>million</b></div></label>
-        </div>
-      </section>
-
       <section class="metrics-grid" aria-label="Radar summary">
         <article class="metric-card metric-models">
           <div class="metric-card-top"><span>All paid models</span><Database size={16} /></div>
@@ -466,6 +452,20 @@
             <a href="https://artificialanalysis.ai/articles" target="_blank" rel="noreferrer">Browse Artificial Analysis <ExternalLink size={14} /></a>
           </div>
         {/if}
+      </section>
+
+      <section class="dashboard-section token-calculator" aria-label="Monthly workload controls">
+        <div class="calculator-heading">
+          <span class="panel-icon"><Gauge size={17} /></span>
+          <div>
+            <strong>Monthly workload</strong>
+            <p>Cost estimates for token-priced models use these volumes; specialized models are excluded.</p>
+          </div>
+        </div>
+        <div class="calculator-fields">
+          <label><span>Input tokens</span><div><input type="number" min="0" step="1" bind:value={inputMillions} /><b>million</b></div></label>
+          <label><span>Output tokens</span><div><input type="number" min="0" step="1" bind:value={outputMillions} /><b>million</b></div></label>
+        </div>
       </section>
 
       <section class="dashboard-section model-section" id="models">
