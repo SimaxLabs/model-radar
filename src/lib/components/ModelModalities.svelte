@@ -16,7 +16,7 @@
 <span class="modality-route">
   <span class="modality-set">
     {#each inputModalities as modality (`input-${modality}`)}
-      <span class="modality-icon modality-input" role="img" aria-label={`${displayModalityName(modality)} input`} title={`${displayModalityName(modality)} input`}>
+      <span class="modality-icon" data-modality={modality.toLowerCase()} role="img" aria-label={`${displayModalityName(modality)} input`} title={`${displayModalityName(modality)} input`}>
         <ModalityIcon {modality} />
       </span>
     {:else}
@@ -26,7 +26,7 @@
   <ArrowRight class="modality-route-arrow" size={15} aria-hidden="true" />
   <span class="modality-set">
     {#each outputModalities as modality (`output-${modality}`)}
-      <span class="modality-icon modality-output" role="img" aria-label={`${displayModalityName(modality)} output`} title={`${displayModalityName(modality)} output`}>
+      <span class="modality-icon" data-modality={modality.toLowerCase()} role="img" aria-label={`${displayModalityName(modality)} output`} title={`${displayModalityName(modality)} output`}>
         <ModalityIcon {modality} />
       </span>
     {:else}

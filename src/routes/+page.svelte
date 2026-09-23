@@ -5,11 +5,11 @@
     ArrowDown,
     ArrowUp,
     ArrowUpDown,
+    BrainCircuit,
     Check,
     ChevronLeft,
     ChevronRight,
     CircleAlert,
-    Database,
     ExternalLink,
     Gauge,
     Newspaper,
@@ -302,7 +302,7 @@
     <button type="button" onclick={() => toggleSort(key)}>
       {label}
       {#if sort === key}
-        {#if sortDirection === "asc"}<ArrowUp size={13} />{:else}<ArrowDown size={13} />{/if}
+        {#if sortDirection === "asc"}<ArrowUp size={17} strokeWidth={2.5} />{:else}<ArrowDown size={17} strokeWidth={2.5} />{/if}
       {:else}
         <ArrowUpDown size={13} />
       {/if}
@@ -314,13 +314,13 @@
   <main class="main-content" id="top">
     <header class="topbar">
       <div class="topbar-inner">
-        <div class="topbar-left">
+        <h1 class="topbar-left">
           <a class="topbar-brand" href="#top" aria-label="Model Radar" onclick={() => activeSection = "radar"}><img class="brand-icon" src={`${base}/model-radar.svg`} alt="" /><span>Model Radar</span></a>
-        </div>
+        </h1>
         <nav class="topbar-nav" aria-label="Dashboard navigation">
           <a class:active={activeSection === "radar"} href="#radar" aria-label="Overview" onclick={() => activeSection = "radar"}><Gauge size={16} /><span>Overview</span></a>
-          <a class:active={activeSection === "news"} href="#news" aria-label="News" onclick={() => activeSection = "news"}><Newspaper size={16} /><span>News</span></a>
-          <a class:active={activeSection === "models"} href="#models" aria-label="Models" onclick={() => activeSection = "models"}><Database size={16} /><span>Models</span></a>
+          <a class="nav-news" class:active={activeSection === "news"} href="#news" aria-label="News" onclick={() => activeSection = "news"}><Newspaper size={16} /><span>News</span></a>
+          <a class="nav-models" class:active={activeSection === "models"} href="#models" aria-label="Models" onclick={() => activeSection = "models"}><BrainCircuit size={16} /><span>Models</span></a>
         </nav>
         <a class="github-link" href="https://github.com/SimaxLabs/model-radar" target="_blank" rel="noreferrer" aria-label="View Model Radar on GitHub" title="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d={siGithub.path} /></svg></a>
       </div>
@@ -340,16 +340,9 @@
       {#if radar.sources.database.state !== "live"}
         <div class="error-banner"><CircleAlert size={17} /> {radar.sources.database.detail}</div>
       {/if}
-      <section class="dashboard-heading" id="radar">
-        <div class="dashboard-title">
-          <h1>AI model overview</h1>
-          <p>Compare capability, pricing, and value across paid OpenRouter models.</p>
-        </div>
-      </section>
-
-      <section class="metrics-grid" aria-label="Radar summary">
+      <section class="metrics-grid" id="radar" aria-label="Radar summary">
         <a class="metric-card metric-card-link metric-models" href="#models" onclick={() => { activeSection = "models"; selectFilter("all"); }}>
-          <div class="metric-card-top"><span>All paid models</span><Database size={16} /></div>
+          <div class="metric-card-top"><span>All paid models</span><BrainCircuit size={16} /></div>
           <div class="metric-value"><strong>{radar.summary.paidModels}</strong><span>routes</span></div>
           <p>{radar.summary.rankedModels} token-priced routes ranked; {radar.summary.specializedModels} specialized</p>
         </a>
@@ -367,21 +360,21 @@
 
       <section class="dashboard-section" aria-label="Top model recommendations">
         <div class="recommendation-grid">
-          <RecommendationCard eyebrow="BEST CAPABILITY" method="Token-priced paid OpenRouter models with an AA Index are sorted from highest to lowest. The five highest-ranked models are shown." models={topQuality} tone="ink" onselect={(model) => selectedModel = model} />
-          <RecommendationCard eyebrow="BEST UNDER BUDGET" method={`Paid models at or below ${money.format(radar.summary.cheapThreshold)} blended per 1M tokens are scored within the cheap set: 50% normalized AA Index and 50% log-price affordability. The five highest scores are shown.`} models={topBudget} tone="lime" onselect={(model) => selectedModel = model} />
+          <RecommendationCard eyebrow="Best capability" method="Token-priced paid OpenRouter models with an AA Index are sorted from highest to lowest. The five highest-ranked models are shown." models={topQuality} tone="ink" onselect={(model) => selectedModel = model} />
+          <RecommendationCard eyebrow="Best under budget" method={`Paid models at or below ${money.format(radar.summary.cheapThreshold)} blended per 1M tokens are scored within the cheap set: 50% normalized AA Index and 50% log-price affordability. The five highest scores are shown.`} models={topBudget} tone="lime" onselect={(model) => selectedModel = model} />
         </div>
       </section>
 
       <section class="dashboard-section news-section" id="news" aria-labelledby="news-heading">
         <header class="section-heading news-heading">
           <div class="section-title-group">
-            <span class="section-title-icon section-title-icon-blue"><Newspaper size={17} /></span>
+            <span class="section-title-icon section-title-icon-news"><Newspaper size={17} /></span>
             <div class="section-title-copy">
-              <h2 id="news-heading">Latest model news</h2>
+              <h2 id="news-heading">Latest news</h2>
               <p>Artificial Analysis</p>
             </div>
           </div>
-          <a href="https://artificialanalysis.ai/articles" target="_blank" rel="noreferrer">View all articles <ExternalLink size={14} /></a>
+          <a href="https://artificialanalysis.ai/articles" target="_blank" rel="noreferrer">View all articles <ExternalLink size={16} /></a>
         </header>
         {#if data.articles.length > 0}
           <div class="news-list">
@@ -421,7 +414,7 @@
       <section class="dashboard-section model-section" id="models">
         <div class="section-heading model-heading">
           <div class="section-title-group">
-            <span class="section-title-icon section-title-icon-green"><Database size={17} /></span>
+            <span class="section-title-icon section-title-icon-models"><BrainCircuit size={17} /></span>
             <div class="section-title-copy"><h2>Models</h2><p>{matchingModels.length} in view</p></div>
           </div>
           <div class="model-tools">
@@ -515,8 +508,8 @@
                 {@const estimatedCost = monthlyCost(model)}
                 {@const inComparison = comparisonIds.includes(model.id)}
                 <tr>
-                  <td class="model-col"><button class="model-identity" onclick={() => selectedModel = model}><ProviderLogo provider={model.provider} size="small" /><span><strong>{displayModelName(model.name)}</strong></span></button></td>
-                  <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<meter min="0" max="100" value={Math.min(100, model.intelligence)} aria-label={`AA Index ${model.intelligence}`}></meter>{/if}</span></td>
+                  <td class="model-col"><button class="model-identity" title={displayModelName(model.name)} onclick={() => selectedModel = model}><ProviderLogo provider={model.provider} size="small" /><span><strong>{displayModelName(model.name)}</strong></span></button></td>
+                  <td class="intelligence-col"><strong class="intelligence-cell">{model.intelligence ?? "-"}</strong></td>
                   {#if filter === "free"}
                     <td class="limit-col limit-cell"><strong>{formatTokenLimit(model.maxCompletionTokens)}</strong>{#if model.maxCompletionTokens !== null}<span>tokens</span>{/if}</td>
                     <td class="limit-col limit-cell"><strong>20</strong><span>shared</span></td>
