@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ExternalLink, X } from "@lucide/svelte";
-  import { displayModelName, formatChange, formatPrice, formatTokenCount, money } from "$lib/format";
+  import { displayModelName, formatChange, formatPrice, money } from "$lib/format";
   import type { RadarModel } from "$lib/types";
   import ModelModalities from "$lib/components/ModelModalities.svelte";
   import SpecializedRates from "$lib/components/SpecializedRates.svelte";
@@ -27,12 +27,6 @@
 
   let dialog: HTMLDialogElement;
   const capabilityMetrics: ComparisonMetric[] = [
-    {
-      label: "Context window",
-      value: (model) => model.contextLength > 0 ? model.contextLength : null,
-      display: (model) => model.contextLength > 0 ? formatTokenCount(model.contextLength) : "N/A",
-      preference: "high",
-    },
     {
       label: "AA Index",
       value: (model) => model.intelligence,

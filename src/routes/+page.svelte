@@ -133,10 +133,6 @@
     return value === null ? "Not published" : formatTokenCount(value);
   }
 
-  function formatContextLength(value: number) {
-    return value > 0 ? formatTokenCount(value) : "Not applicable";
-  }
-
   function compareModalities(left: string, right: string) {
     const leftIndex = MODALITY_ORDER.indexOf(left);
     const rightIndex = MODALITY_ORDER.indexOf(right);
@@ -492,7 +488,6 @@
             <thead>
               <tr>
                 <th class="model-col">Model</th>
-                <th class="context-col">Context</th>
                 {@render sortableHeader("intelligence", "AA Index", "intelligence-col")}
                 {#if filter === "free"}
                   <th class="limit-col">Max output</th>
@@ -521,7 +516,6 @@
                 {@const inComparison = comparisonIds.includes(model.id)}
                 <tr>
                   <td class="model-col"><button class="model-identity" onclick={() => selectedModel = model}><ProviderLogo provider={model.provider} size="small" /><span><strong>{displayModelName(model.name)}</strong></span></button></td>
-                  <td class="context-col">{formatContextLength(model.contextLength)}</td>
                   <td class="intelligence-col"><span class="intelligence-cell"><strong>{model.intelligence ?? "-"}</strong>{#if model.intelligence !== null}<meter min="0" max="100" value={Math.min(100, model.intelligence)} aria-label={`AA Index ${model.intelligence}`}></meter>{/if}</span></td>
                   {#if filter === "free"}
                     <td class="limit-col limit-cell"><strong>{formatTokenLimit(model.maxCompletionTokens)}</strong>{#if model.maxCompletionTokens !== null}<span>tokens</span>{/if}</td>

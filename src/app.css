@@ -1208,7 +1208,6 @@ tbody tr:hover td {
   width: 30%;
 }
 
-.context-col { min-width: 84px; }
 .intelligence-col { min-width: 92px; }
 .modality-col { min-width: 190px; }
 .specialized-price-col { min-width: 190px; }

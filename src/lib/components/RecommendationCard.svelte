@@ -1,7 +1,7 @@
 <script lang="ts">
   import { BrainCircuit, Info, Wallet } from "@lucide/svelte";
   import ProviderLogo from "$lib/components/ProviderLogo.svelte";
-  import { displayModelName, formatPrice, formatTokenCount } from "$lib/format";
+  import { displayModelName, formatPrice } from "$lib/format";
   import type { RadarModel } from "$lib/types";
 
   let {
@@ -39,7 +39,6 @@
         <thead>
           <tr>
             <th scope="col">Model</th>
-            <th scope="col">Context</th>
             <th scope="col">Input / 1M</th>
             <th scope="col">Output / 1M</th>
           </tr>
@@ -53,7 +52,6 @@
                   <h3 title={displayModelName(model.name)}><button type="button" onclick={() => onselect(model)}>{displayModelName(model.name)}</button></h3>
                 </div>
               </td>
-              <td>{formatTokenCount(model.contextLength)}</td>
               <td>{model.inputPrice === null ? "-" : formatPrice(model.inputPrice)}</td>
               <td>{model.outputPrice === null ? "-" : formatPrice(model.outputPrice)}</td>
             </tr>
