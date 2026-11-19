@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayModelName, formatTokenCount, formatUnitPrice, providerName } from "$lib/format";
+import { displayModelName, formatChange, formatPrice, formatTokenCount, providerName } from "$lib/format";
 
 describe("provider formatting", () => {
   it("normalizes latest-model aliases to the creator name", () => {
@@ -31,8 +31,16 @@ describe("model name formatting", () => {
 
 describe("specialized price formatting", () => {
   it("preserves small model-specific unit prices", () => {
-    expect(formatUnitPrice(32)).toBe("$32.00");
-    expect(formatUnitPrice(0.003)).toBe("$0.003");
-    expect(formatUnitPrice(0.00000958)).toBe("$0.00000958");
+    expect(formatPrice(32)).toBe("$32.00");
+    expect(formatPrice(0.003)).toBe("$0.003");
+    expect(formatPrice(0.00000958)).toBe("$0.00000958");
+    expect(formatPrice(0.015)).toBe("$0.015");
+    expect(formatPrice(0.024)).toBe("$0.024");
   });
+});
+
+it("shows small active price changes without rounding them to zero", () => {
+  expect(formatChange(0.02)).toBe("+0.02%");
+  expect(formatChange(-0.001)).toBe("-0.001%");
+  expect(formatChange(0.0009)).toBe("No active change");
 });

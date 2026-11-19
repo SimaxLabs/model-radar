@@ -1,4 +1,4 @@
-export type SourceState = "live" | "unavailable";
+export type SourceState = "live" | "stale" | "unavailable";
 
 export const PRICE_HISTORY_RETENTION_DAYS = 15;
 

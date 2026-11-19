@@ -5,12 +5,6 @@ export const money = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
 });
 
-const preciseMoney = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 4,
-});
 const unitMoney = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
@@ -42,10 +36,6 @@ export function formatTokenCount(value: number) {
 }
 
 export function formatPrice(value: number) {
-  return value < 0.01 ? preciseMoney.format(value) : money.format(value);
-}
-
-export function formatUnitPrice(value: number) {
   return unitMoney.format(value);
 }
 
@@ -83,5 +73,6 @@ export function formatSyncTime(value: string) {
 
 export function formatChange(value: number | null) {
   if (value === null || Math.abs(value) < 0.001) return "No active change";
-  return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
+  const percent = Math.abs(value) < 0.1 ? Number(value.toFixed(3)) : value.toFixed(1);
+  return `${value > 0 ? "+" : ""}${percent}%`;
 }

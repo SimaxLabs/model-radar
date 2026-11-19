@@ -69,4 +69,44 @@ describe("price movement retention", () => {
       "2026-06-26",
     ]);
   });
+
+  it("uses only retained earlier UTC dates as baselines and skips repeat writes", async () => {
+    const model = { modelId: "daily", inputPrice: 1, outputPrice: 1, blendedPrice: 1 };
+    const higher = { ...model, inputPrice: 2, blendedPrice: 1.75 };
+    await syncPriceHistory([model], new Date("2026-07-01T00:00Z"));
+    expect((await syncPriceHistory([higher], new Date("2026-07-01T23:59Z"))).size).toBe(0);
+    const midnight = new Date("2026-07-02T00:00Z");
+    const movement = (await syncPriceHistory([model], midnight)).get("daily");
+    expect(movement?.baselineInputPrice).toBe(2);
+    const { client } = await getDatabase();
+    await client.execute(`CREATE TRIGGER no_repeat BEFORE INSERT ON price_snapshots
+      WHEN NEW.model_id = 'daily' AND NEW.captured_on = '2026-07-02'
+      BEGIN SELECT RAISE(ABORT, 'unnecessary snapshot write'); END`);
+    try {
+      expect((await syncPriceHistory([model], new Date("2026-07-02T04:00Z"))).get("daily")).toEqual(movement);
+    } finally {
+      await client.execute("DROP TRIGGER no_repeat");
+    }
+    expect((await syncPriceHistory([higher], new Date("2026-08-20T00:00Z"))).size).toBe(0);
+  });
+
+  it("commits a reversal with its snapshot even at a batch boundary", async () => {
+    const model = { modelId: "reversal", inputPrice: 1, outputPrice: 1, blendedPrice: 1 };
+    await syncPriceHistory([model], new Date("2026-09-01"));
+    await syncPriceHistory([{ ...model, inputPrice: 2, blendedPrice: 1.75 }], new Date("2026-09-02"));
+    const models = [...Array.from({ length: 99 }, (_, i) => ({ ...model, modelId: `other/${i}` })), model];
+    const { client } = await getDatabase();
+    await client.execute(`CREATE TRIGGER fail_snapshot BEFORE INSERT ON price_snapshots
+      WHEN NEW.model_id = 'reversal' BEGIN SELECT RAISE(ABORT, 'snapshot unavailable'); END`);
+    try {
+      await expect(syncPriceHistory(models, new Date("2026-09-03"))).rejects.toThrow("snapshot unavailable");
+      const result = await client.execute("SELECT current_input_price FROM price_movements WHERE model_id = 'reversal'");
+      expect(result.rows[0]?.current_input_price).toBe(2);
+    } finally {
+      await client.execute("DROP TRIGGER fail_snapshot");
+    }
+    expect((await syncPriceHistory(models, new Date("2026-09-03"))).size).toBe(0);
+    const count = await client.execute("SELECT COUNT(*) AS n FROM price_snapshots WHERE captured_on = '2026-09-03'");
+    expect(count.rows[0].n).toBe(100);
+  });
 });

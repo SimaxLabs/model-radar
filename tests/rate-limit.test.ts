@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { consumeRateLimit } from "$lib/server/rate-limit";
 
 describe("rate limiting", () => {
@@ -10,5 +10,24 @@ describe("rate limiting", () => {
     const blocked = consumeRateLimit(key, 2, 60_000);
     expect(blocked.allowed).toBe(false);
     expect(blocked.retryAfter).toBeGreaterThan(0);
+  });
+
+  it("removes one-time visitors on new traffic without disturbing active windows", () => {
+    vi.useFakeTimers();
+    const deleted = vi.spyOn(Map.prototype, "delete");
+    try {
+      const short = crypto.randomUUID();
+      const long = crypto.randomUUID();
+      consumeRateLimit(short, 1, 60_000);
+      consumeRateLimit(long, 1, 120_000);
+      vi.advanceTimersByTime(60_001);
+      consumeRateLimit(crypto.randomUUID(), 1, 60_000);
+      expect(deleted).toHaveBeenCalledWith(short);
+      expect(consumeRateLimit(short, 1, 60_000).allowed).toBe(true);
+      expect(consumeRateLimit(long, 1, 120_000)).toEqual({ allowed: false, retryAfter: 60 });
+    } finally {
+      deleted.mockRestore();
+      vi.useRealTimers();
+    }
   });
 });

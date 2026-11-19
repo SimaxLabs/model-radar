@@ -4,9 +4,16 @@ interface WindowEntry {
 }
 
 const windows = new Map<string, WindowEntry>();
+let nextSweep = 0;
 
 export function consumeRateLimit(key: string, limit: number, windowMs: number) {
   const now = Date.now();
+  if (now >= nextSweep) {
+    for (const [entryKey, entry] of windows) {
+      if (entry.resetsAt <= now) windows.delete(entryKey);
+    }
+    nextSweep = now + 60_000;
+  }
   const current = windows.get(key);
 
   if (!current || current.resetsAt <= now) {
@@ -22,10 +29,5 @@ export function consumeRateLimit(key: string, limit: number, windowMs: number) {
   }
 
   current.count += 1;
-  if (windows.size > 5_000) {
-    for (const [entryKey, entry] of windows) {
-      if (entry.resetsAt <= now) windows.delete(entryKey);
-    }
-  }
   return { allowed: true, retryAfter: 0 };
 }

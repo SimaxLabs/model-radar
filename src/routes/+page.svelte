@@ -93,34 +93,16 @@
     ).length;
   });
   let topQuality = $derived(
-    tokenPricedModels.filter((model) => model.intelligence !== null).sort(
-      (left, right) =>
-        (left.intelligenceRank ?? Infinity) -
-        (right.intelligenceRank ?? Infinity),
-    ).slice(0, RECOMMENDATION_COUNT),
+    radar.models.filter((model) => model.intelligenceRank !== null).slice(0, RECOMMENDATION_COUNT),
   );
   let topBudget = $derived(
     rankBudgetModels(radar.models).slice(0, RECOMMENDATION_COUNT),
   );
   let recentPriceMovements = $derived.by(() => {
     const cutoff = Date.parse(radar.generatedAt) - 24 * 60 * 60 * 1000;
-    let increases = 0;
-    let drops = 0;
-    let mixed = 0;
-
-    for (const model of tokenPricedModels) {
-      if (!model.priceChangeRecordedAt || Date.parse(model.priceChangeRecordedAt) < cutoff) continue;
-      const changes = [model.inputPriceChangePercent, model.outputPriceChangePercent].filter(
-        (change): change is number => change !== null && Math.abs(change) >= 0.001,
-      );
-      const increased = changes.some((change) => change > 0);
-      const dropped = changes.some((change) => change < 0);
-      if (increased && dropped) mixed += 1;
-      else if (increased) increases += 1;
-      else if (dropped) drops += 1;
-    }
-
-    return { models: increases + drops + mixed, increases, drops, mixed };
+    return tokenPricedModels.filter((model) =>
+      model.priceChangeRecordedAt && Date.parse(model.priceChangeRecordedAt) >= cutoff && hasPriceChange(model)
+    ).length;
   });
 
   function hasPriceChange(model: RadarModel) {
@@ -327,23 +309,34 @@
     </header>
 
     <div class="page-wrap">
-      {#if radar.sources.benchmarks.state !== "live"}
+      {#if radar.sources.openRouter.state !== "live"}
+        <div class="source-banner">
+          <CircleAlert size={19} />
+          <div>
+            <strong>{radar.sources.openRouter.label}</strong>
+            <p>{radar.sources.openRouter.detail}
+              {#if radar.sources.openRouter.state === "stale"}Last snapshot: {formatSyncTime(radar.generatedAt)}.{/if}
+            </p>
+          </div>
+        </div>
+      {/if}
+      {#if radar.models.length && radar.sources.benchmarks.state !== "live"}
         <div class="source-banner">
           <CircleAlert size={19} />
           <div>
             <strong>{radar.sources.benchmarks.label}</strong>
-            <p>{radar.sources.benchmarks.detail} Pricing remains available from OpenRouter.</p>
+            <p>{radar.sources.benchmarks.detail}</p>
           </div>
           <a href="https://openrouter.ai/docs/api/api-reference/models/list-all-models-and-their-properties" target="_blank" rel="noreferrer">API docs <ExternalLink size={14} /></a>
         </div>
       {/if}
-      {#if radar.sources.database.state !== "live"}
+      {#if radar.models.length && radar.sources.database.state !== "live"}
         <div class="error-banner"><CircleAlert size={17} /> {radar.sources.database.detail}</div>
       {/if}
       <section class="metrics-grid" id="radar" aria-label="Radar summary">
         <a class="metric-card metric-card-link metric-models" href="#models" onclick={() => { activeSection = "models"; selectFilter("all"); }}>
           <div class="metric-card-top"><span>All paid models</span><BrainCircuit size={16} /></div>
-          <div class="metric-value"><strong>{radar.summary.paidModels}</strong><span>routes</span></div>
+          <div class="metric-value"><strong>{radar.models.length ? radar.summary.paidModels : "—"}</strong><span>routes</span></div>
           <p>{radar.summary.rankedModels} token-priced routes ranked; {radar.summary.specializedModels} specialized</p>
         </a>
         <a class="metric-card metric-card-link metric-news" href="#news" onclick={() => activeSection = "news"}>
@@ -353,8 +346,8 @@
         </a>
         <a class="metric-card metric-card-link metric-moves" href="#models" onclick={() => { activeSection = "models"; selectFilter("changed"); }}>
           <div class="metric-card-top"><span>Price movement</span><Activity size={16} /></div>
-          <div class="metric-value"><strong>{recentPriceMovements.models}</strong><span>models</span></div>
-          <p><span class="move-down">{recentPriceMovements.drops} down</span><span class="move-up">{recentPriceMovements.increases} up</span><span class="move-mixed">{recentPriceMovements.mixed} mixed</span><span class="movement-refresh">Past 24h / 1h refresh</span></p>
+          <div class="metric-value"><strong>{radar.sources.database.state === "live" ? recentPriceMovements : "—"}</strong><span>models</span></div>
+          <p>Active price changes updated in the 24h before this snapshot</p>
         </a>
       </section>
 
@@ -554,7 +547,9 @@
               {/each}
             </tbody>
           </table>
-          {#if matchingModels.length === 0}
+          {#if !radar.models.length}
+            <div class="no-results"><CircleAlert size={23} /><strong>Model catalog unavailable</strong><p>Try again when pricing is back online.</p></div>
+          {:else if matchingModels.length === 0}
             <div class="no-results"><Search size={23} /><strong>No models in this view</strong><p>Try another filter or clear your search.</p></div>
           {/if}
         </div>
@@ -575,7 +570,7 @@
       <footer>
         <div class="footer-brand"><img class="brand-icon" src={`${base}/model-radar.svg`} alt="" /> Model Radar</div>
         <p>Pricing by <a href="https://openrouter.ai" target="_blank" rel="noreferrer">OpenRouter</a>. Benchmarks and news by <a href="https://artificialanalysis.ai" target="_blank" rel="noreferrer">Artificial Analysis</a>; benchmark indices supplied via OpenRouter.</p>
-        <span>Snapshot {radar.snapshotDate}</span>
+        {#if radar.models.length}<span>Snapshot {radar.snapshotDate}</span>{/if}
       </footer>
     </div>
   </main>

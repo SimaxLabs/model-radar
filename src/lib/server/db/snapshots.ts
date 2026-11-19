@@ -1,4 +1,5 @@
 import type { Client, InStatement } from "@libsql/client";
+import { calculateBlendedPrice } from "$lib/scoring";
 import { PRICE_HISTORY_RETENTION_DAYS } from "$lib/types";
 import { getDatabase } from "$lib/server/db/client";
 
@@ -19,6 +20,7 @@ export interface ActivePriceMovement {
 interface LatestPrice {
   inputPrice: number;
   outputPrice: number;
+  blendedPrice: number;
   capturedAt: string;
 }
 
@@ -28,36 +30,34 @@ function chunks<T>(values: T[], size: number) {
   );
 }
 
-async function getLatestPrices(client: Client, modelIds: string[]) {
-  const prices = new Map<string, LatestPrice>();
+async function getLatestPrices(client: Client, modelIds: string[], capturedOn: string, cutoffOn: string) {
+  const today = new Map<string, LatestPrice>();
+  const previous = new Map<string, LatestPrice>();
 
   for (const modelIdChunk of chunks(modelIds, 200)) {
     const placeholders = modelIdChunk.map(() => "?").join(",");
     const result = await client.execute({
-      sql: `SELECT current.model_id, current.input_price, current.output_price,
-          current.captured_at
-        FROM price_snapshots current
-        INNER JOIN (
-          SELECT model_id, MAX(captured_on) AS captured_on
+      sql: `SELECT model_id, input_price, output_price, blended_price, captured_on, captured_at
+        FROM price_snapshots WHERE (model_id, captured_on) IN (
+          SELECT model_id, MAX(captured_on)
           FROM price_snapshots
-          WHERE model_id IN (${placeholders})
-          GROUP BY model_id
-        ) latest
-        ON current.model_id = latest.model_id
-        AND current.captured_on = latest.captured_on`,
-      args: modelIdChunk,
+          WHERE model_id IN (${placeholders}) AND captured_on BETWEEN ? AND ?
+          GROUP BY model_id, (captured_on = ?)
+        )`,
+      args: [...modelIdChunk, cutoffOn, capturedOn, capturedOn],
     });
 
     for (const row of result.rows) {
-      prices.set(String(row.model_id), {
+      (row.captured_on === capturedOn ? today : previous).set(String(row.model_id), {
         inputPrice: Number(row.input_price),
         outputPrice: Number(row.output_price),
+        blendedPrice: Number(row.blended_price),
         capturedAt: String(row.captured_at),
       });
     }
   }
 
-  return prices;
+  return { today, previous };
 }
 
 async function getActiveMovements(client: Client, modelIds: string[], cutoffAt: string) {
@@ -92,110 +92,82 @@ async function getActiveMovements(client: Client, modelIds: string[], cutoffAt: 
   return movements;
 }
 
-export async function syncPriceHistory(
-  models: SnapshotInput[],
-  capturedAt: Date,
-) {
+function updateMovement(
+  model: SnapshotInput, previous: LatestPrice, capturedAtIso: string,
+  movements: Map<string, ActivePriceMovement>,
+): InStatement | undefined {
+  const active = movements.get(model.modelId);
+  const baselineInputPrice = active?.baselineInputPrice ?? previous.inputPrice;
+  const baselineOutputPrice = active?.baselineOutputPrice ?? previous.outputPrice;
+  const baselineCapturedAt = active?.baselineCapturedAt ?? previous.capturedAt;
+  if (baselineInputPrice === model.inputPrice && baselineOutputPrice === model.outputPrice) {
+    if (!movements.delete(model.modelId)) return;
+    return {
+      sql: "DELETE FROM price_movements WHERE model_id = ?",
+      args: [model.modelId],
+    };
+  }
+
+  movements.set(model.modelId, { baselineInputPrice, baselineOutputPrice, baselineCapturedAt, changedAt: capturedAtIso });
+  return {
+    sql: `INSERT INTO price_movements (
+      model_id, baseline_price, baseline_captured_at,
+      baseline_input_price, baseline_output_price,
+      current_price, current_input_price, current_output_price, changed_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(model_id) DO UPDATE SET
+      baseline_price = excluded.baseline_price,
+      baseline_captured_at = excluded.baseline_captured_at,
+      baseline_input_price = excluded.baseline_input_price,
+      baseline_output_price = excluded.baseline_output_price,
+      current_price = excluded.current_price,
+      current_input_price = excluded.current_input_price,
+      current_output_price = excluded.current_output_price,
+      changed_at = excluded.changed_at`,
+    args: [
+      model.modelId, calculateBlendedPrice(baselineInputPrice, baselineOutputPrice), baselineCapturedAt,
+      baselineInputPrice, baselineOutputPrice, model.blendedPrice, model.inputPrice, model.outputPrice, capturedAtIso,
+    ],
+  };
+}
+
+export async function syncPriceHistory(models: SnapshotInput[], capturedAt: Date) {
   const { client } = await getDatabase();
-  const capturedOn = capturedAt.toISOString().slice(0, 10);
   const capturedAtIso = capturedAt.toISOString();
-  const cutoff = new Date(
-    capturedAt.getTime() - PRICE_HISTORY_RETENTION_DAYS * 24 * 60 * 60 * 1000,
-  );
-  const cutoffAtIso = cutoff.toISOString();
+  const capturedOn = capturedAtIso.slice(0, 10);
+  const cutoffAtIso = new Date(capturedAt.getTime() - PRICE_HISTORY_RETENTION_DAYS * 86_400_000).toISOString();
   const cutoffOn = cutoffAtIso.slice(0, 10);
   const modelIds = models.map((model) => model.modelId);
-  const latestPrices = await getLatestPrices(client, modelIds);
+  const { today, previous } = await getLatestPrices(client, modelIds, capturedOn, cutoffOn);
   const movements = await getActiveMovements(client, modelIds, cutoffAtIso);
-  const movementStatements: InStatement[] = [];
+  let statements: InStatement[] = [];
 
   for (const model of models) {
-    const latestPrice = latestPrices.get(model.modelId);
-    if (
-      latestPrice === undefined ||
-      (latestPrice.inputPrice === model.inputPrice && latestPrice.outputPrice === model.outputPrice)
-    ) continue;
+    const current = today.get(model.modelId);
+    const priorDay = previous.get(model.modelId);
+    const last = current ?? priorDay;
+    const ratesChanged = !last || last.inputPrice !== model.inputPrice || last.outputPrice !== model.outputPrice;
+    if (!ratesChanged && current?.blendedPrice === model.blendedPrice) continue;
 
-    const activeMovement = movements.get(model.modelId);
-    const baselineInputPrice = activeMovement?.baselineInputPrice ?? latestPrice.inputPrice;
-    const baselineOutputPrice = activeMovement?.baselineOutputPrice ?? latestPrice.outputPrice;
-    const baselineCapturedAt = activeMovement?.baselineCapturedAt ?? latestPrice.capturedAt;
-    if (
-      baselineInputPrice === model.inputPrice &&
-      baselineOutputPrice === model.outputPrice
-    ) {
-      movements.delete(model.modelId);
-      movementStatements.push({
-        sql: "DELETE FROM price_movements WHERE model_id = ?",
-        args: [model.modelId],
-      });
-      continue;
+    const movement = ratesChanged && priorDay ? updateMovement(model, priorDay, capturedAtIso, movements) : undefined;
+    if (statements.length + (movement ? 2 : 1) > 100) {
+      await client.batch(statements, "write");
+      statements = [];
     }
-
-    const movement = {
-      baselineInputPrice,
-      baselineOutputPrice,
-      baselineCapturedAt,
-      changedAt: capturedAtIso,
-    };
-    movements.set(model.modelId, movement);
-    movementStatements.push({
-      sql: `INSERT INTO price_movements (
-        model_id, baseline_price, baseline_captured_at,
-        baseline_input_price, baseline_output_price,
-        current_price, current_input_price, current_output_price, changed_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(model_id) DO UPDATE SET
-        baseline_price = excluded.baseline_price,
-        baseline_captured_at = excluded.baseline_captured_at,
-        baseline_input_price = excluded.baseline_input_price,
-        baseline_output_price = excluded.baseline_output_price,
-        current_price = excluded.current_price,
-        current_input_price = excluded.current_input_price,
-        current_output_price = excluded.current_output_price,
-        changed_at = excluded.changed_at`,
-      args: [
-        model.modelId,
-        (baselineInputPrice * 3 + baselineOutputPrice) / 4,
-        baselineCapturedAt,
-        baselineInputPrice,
-        baselineOutputPrice,
-        model.blendedPrice,
-        model.inputPrice,
-        model.outputPrice,
-        capturedAtIso,
-      ],
+    if (movement) statements.push(movement);
+    statements.push({
+      sql: `INSERT INTO price_snapshots (
+        model_id, captured_on, input_price, output_price, blended_price, captured_at
+      ) VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(model_id, captured_on) DO UPDATE SET
+        input_price = excluded.input_price,
+        output_price = excluded.output_price,
+        blended_price = excluded.blended_price,
+        captured_at = excluded.captured_at`,
+      args: [model.modelId, capturedOn, model.inputPrice, model.outputPrice, model.blendedPrice, capturedAtIso],
     });
   }
-
-  for (const statementChunk of chunks(movementStatements, 100)) {
-    await client.batch(statementChunk, "write");
-  }
-
-  const snapshotStatements: InStatement[] = models.map((model) => ({
-    sql: `INSERT INTO price_snapshots (
-      model_id, captured_on, input_price, output_price, blended_price, captured_at
-    ) VALUES (?, ?, ?, ?, ?, ?)
-    ON CONFLICT(model_id, captured_on) DO UPDATE SET
-      input_price = excluded.input_price,
-      output_price = excluded.output_price,
-      blended_price = excluded.blended_price,
-      captured_at = excluded.captured_at
-    WHERE price_snapshots.input_price != excluded.input_price
-       OR price_snapshots.output_price != excluded.output_price
-       OR price_snapshots.blended_price != excluded.blended_price`,
-    args: [
-      model.modelId,
-      capturedOn,
-      model.inputPrice,
-      model.outputPrice,
-      model.blendedPrice,
-      capturedAtIso,
-    ],
-  }));
-  for (const statementChunk of chunks(snapshotStatements, 100)) {
-    await client.batch(statementChunk, "write");
-  }
+  if (statements.length) await client.batch(statements, "write");
 
   await client.batch(
     [

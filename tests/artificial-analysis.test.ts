@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseArtificialAnalysisArticles } from "$lib/server/artificial-analysis";
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.resetModules();
@@ -76,5 +77,45 @@ describe("Artificial Analysis articles", () => {
     vi.advanceTimersByTime(1);
     await getArtificialAnalysisArticles();
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("shares stale headlines across readers and waits a minute before retrying", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const html = '<a href="/articles/story"><h3>News</h3><p>July 30, 2026</p></a>';
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response(html, { headers: { "content-type": "text/html" } }))
+      .mockRejectedValue(new Error("news offline"));
+    vi.stubGlobal("fetch", fetchMock);
+    const { getArtificialAnalysisArticles: news } = await import("$lib/server/artificial-analysis");
+    const first = await news();
+    expect(first).toHaveLength(1);
+    vi.advanceTimersByTime(3 * 3_600_000);
+    expect(await Promise.all([news(), news()])).toEqual([first, first]);
+    expect(await news()).toEqual(first);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    vi.advanceTimersByTime(60_000);
+    await news();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("cancels an oversized stream without waiting for its end or a length header", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const cancel = vi.fn();
+    const body = new ReadableStream({
+      start(controller) {
+        const chunk = new TextEncoder().encode("é".repeat(250_001));
+        controller.enqueue(chunk);
+        controller.enqueue(chunk);
+      },
+      cancel,
+    });
+    const fetchMock = vi.fn(async () => new Response(body, { headers: { "content-type": "text/html" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { getArtificialAnalysisArticles: news } = await import("$lib/server/artificial-analysis");
+    expect(await news()).toEqual([]);
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(log.mock.calls[0]?.[1]).toHaveProperty("message", "Artificial Analysis response is too large");
+    expect(await news()).toEqual([]);
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 });

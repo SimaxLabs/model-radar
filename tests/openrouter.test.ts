@@ -7,6 +7,23 @@ afterEach(() => {
 });
 
 describe("OpenRouter models", () => {
+  it("skips unusable creation times and drops invalid optional expiry dates", async () => {
+    const model = openRouterModel("good", "0.000001", "0.000002");
+    vi.stubGlobal("fetch", vi.fn(async (url) => Response.json({
+      data: String(url).includes("output_modalities") ? [
+        { ...model, id: "bad", created: 1e20 },
+        { ...model, expiration_date: "unknown" },
+        { ...model, id: "expiring", expiration_date: "2026-11-30" },
+      ] : [],
+    })));
+    expect((await fetchOpenRouterModels(true)).map(({ id, expiration_date }) => [id, expiration_date]))
+      .toEqual([["good", null], ["expiring", "2026-11-30"]]);
+  });
+
+  it("does not cache an empty catalog as a successful refresh", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ data: [] })));
+    await expect(fetchOpenRouterModels(true)).rejects.toThrow("no usable models");
+  });
   it("preserves embedded Artificial Analysis benchmark indices", async () => {
     const fetchMock = vi.fn(async () =>
       new Response(

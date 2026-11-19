@@ -34,6 +34,7 @@ function isValidModel(model: unknown): model is OpenRouterModel {
     typeof candidate.canonical_slug === "string" &&
     typeof candidate.context_length === "number" &&
     typeof candidate.created === "number" &&
+    Number.isFinite(new Date(candidate.created * 1000).getTime()) &&
     !!candidate.architecture &&
     Array.isArray(candidate.architecture.input_modalities) &&
     candidate.architecture.input_modalities.length > 0 &&
@@ -183,6 +184,8 @@ async function requestModels() {
 
   const models = payload.data.filter(isValidModel).map((model) => ({
     ...model,
+    expiration_date: typeof model.expiration_date === "string" && Number.isFinite(Date.parse(model.expiration_date))
+      ? model.expiration_date : null,
     pricing_skus: videoResult.pricing.get(model.id),
     imagePricing: imageResult.pricing.get(model.id),
     mediaPricingComplete,
@@ -205,18 +208,12 @@ async function requestModels() {
     );
   });
 
+  if (!models.length) throw new Error("OpenRouter returned no usable models");
   cache = { data: models, expiresAt: Date.now() + CACHE_TTL };
   return models;
 }
 
 export async function fetchOpenRouterModels(force = false) {
   if (!force && cache && cache.expiresAt > Date.now()) return cache.data;
-  if (!force && pending) return pending;
-
-  pending = requestModels();
-  try {
-    return await pending;
-  } finally {
-    pending = null;
-  }
+  return pending ??= requestModels().finally(() => { pending = null; });
 }

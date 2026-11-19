@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { formatUnitPrice } from "$lib/format";
+  import { formatPrice } from "$lib/format";
   import type { SpecializedRate } from "$lib/types";
 
   let { rates }: { rates: SpecializedRate[] } = $props();
@@ -9,7 +9,7 @@
   {#each rates as rate (`${rate.label}-${rate.unit}-${rate.price}`)}
     <span class="specialized-rate">
       <span>{rate.label}</span>
-      <strong>{formatUnitPrice(rate.price)}</strong>
+      <strong>{formatPrice(rate.price)}</strong>
       <small>/ {rate.unit}</small>
     </span>
   {:else}

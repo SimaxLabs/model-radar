@@ -22,6 +22,7 @@ const RADAR_CACHE_TTL = 60 * 60 * 1000;
 
 let cache: { data: RadarData; expiresAt: number } | null = null;
 let pending: Promise<RadarData> | null = null;
+let forced: Promise<RadarData> | null = null;
 
 function positiveNumber(value: string | undefined, fallback: number) {
   const parsed = Number(value);
@@ -98,7 +99,7 @@ function getVideoRate(sku: string, value: string): { side: "input" | "output"; r
   if (match) {
     const [, workflow, audio, resolution] = match;
     let label = workflow === "text" ? "Text to video" : workflow === "image" ? "Image to video" : "Video";
-    if (!workflow && audio) label = audio === "with" ? "Video + audio" : "Video only";
+    if (audio) label += audio === "with" ? " with audio" : " without audio";
     if (resolution) label += ` ${resolution === "4k" ? "4K" : resolution}`;
     return { side: "output", rate: { label, price: rawPrice, unit: "second" } };
   }
@@ -162,8 +163,8 @@ function getSpecializedPricing(model: OpenRouterModel): SpecializedPricing {
 
   if (request !== null) input.push({ label: "Request", price: request, unit: "request" });
 
-  if (model.imagePricing?.length) {
-    for (const price of model.imagePricing) {
+  if (outputModalities.includes("image") || model.imagePricing?.length) {
+    for (const price of model.imagePricing ?? []) {
       if (price.cost_usd <= 0) continue;
       const side = price.billable === "output_image" ? "output" : "input";
       let label = price.billable === "output_image"
@@ -201,18 +202,16 @@ function getSpecializedPricing(model: OpenRouterModel): SpecializedPricing {
       }
       (side === "output" ? output : input).push({ label, price: value, unit });
     }
+    // ponytail: Generic image_output lacks a reliable unit; only its explicit image_token alias is safe.
+    if (!model.imagePricing?.length && imageToken !== null) {
+      output.push({ label: "Image", price: imageToken * MILLION, unit: "1M image tokens" });
+    }
     if (outputModalities.includes("text")) {
-      if (prompt !== null && !model.imagePricing.some((price) => price.billable === "input_text")) {
+      if (prompt !== null && !model.imagePricing?.some((price) => price.billable === "input_text")) {
         input.push({ label: "Text", price: prompt * MILLION, unit: "1M text tokens" });
       }
       if (completion !== null) output.push({ label: "Text", price: completion * MILLION, unit: "1M text tokens" });
     }
-    return { input, output };
-  }
-
-  if (outputModalities.includes("image")) {
-    // ponytail: Generic image_output lacks a reliable unit; only its explicit image_token alias is safe.
-    if (imageToken !== null) output.push({ label: "Image", price: imageToken * MILLION, unit: "1M image tokens" });
     return { input, output };
   }
 
@@ -437,18 +436,33 @@ async function buildRadarData(force: boolean): Promise<RadarData> {
   };
 }
 
-export async function getRadarData(force = false) {
-  if (!force && cache && cache.expiresAt > Date.now()) return cache.data;
-  if (!force && pending) return pending;
+async function refresh(force: boolean) {
+  const data = await buildRadarData(force);
+  cache = { data, expiresAt: Date.now() + RADAR_CACHE_TTL };
+  return data;
+}
 
-  const request = buildRadarData(force);
-  if (!force) pending = request;
+export async function getRadarData(force = false): Promise<RadarData> {
+  if (force) {
+    // A forced fetch must follow any ordinary writer, even if that writer fails.
+    const start = () => refresh(true);
+    forced ??= (pending ? pending.then(start, start) : start()).finally(() => { forced = null; });
+    return forced;
+  }
+  if (cache && cache.expiresAt > Date.now()) return cache.data;
   try {
-    const data = await request;
-    cache = { data, expiresAt: Date.now() + RADAR_CACHE_TTL };
-    return data;
-  } finally {
-    if (!force) pending = null;
+    return await (forced ?? (pending ??= refresh(false).finally(() => { pending = null; })));
+  } catch (error) {
+    if (!cache) throw error;
+    const data = cache.data;
+    const stale: RadarData = {
+      ...data,
+      sources: { ...data.sources, openRouter: {
+        state: "stale", label: "Showing last known prices", detail: "OpenRouter could not be refreshed.",
+      } },
+    };
+    cache = { data: stale, expiresAt: Date.now() + 60_000 };
+    return stale;
   }
 }
 

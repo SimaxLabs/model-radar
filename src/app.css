@@ -467,11 +467,6 @@ summary::marker {
   line-height: 1.35;
 }
 
-.move-down { color: var(--green); }
-.move-up { color: var(--red); }
-.move-mixed { color: var(--blue); }
-.movement-refresh { white-space: nowrap; }
-
 .dashboard-section {
   margin-top: 28px;
   scroll-margin-top: 96px;
@@ -2241,10 +2236,6 @@ footer a:hover {
     flex-wrap: wrap;
     gap: 2px 8px;
     margin-top: 6px;
-  }
-
-  .movement-refresh {
-    margin-left: 0;
   }
 
 }

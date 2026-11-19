@@ -9,10 +9,7 @@ export const load: PageServerLoad = async ({ setHeaders }) => {
       console.error("Initial radar load failed", error);
       return unavailableRadarData();
     }),
-    getArtificialAnalysisArticles().catch((error) => {
-      console.error("Artificial Analysis articles load failed", error);
-      return [];
-    }),
+    getArtificialAnalysisArticles(),
   ]);
   return { radar, articles };
 };

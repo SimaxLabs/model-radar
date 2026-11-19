@@ -140,6 +140,20 @@ describe("radar model variants", () => {
     });
   });
 
+  it("distinguishes workflow prices with and without audio", async () => {
+    mocks.fetchOpenRouterModels.mockResolvedValue([{
+      ...openRouterModel("example/video", "0", "0", ["video"]),
+      pricing_skus: {
+        text_to_video_duration_seconds_with_audio_720p: "0.15",
+        text_to_video_duration_seconds_without_audio_720p: "0.10",
+      },
+    }]);
+    expect((await getRadarData(true)).models[0].specializedPricing?.output).toEqual([
+      { label: "Text to video with audio 720p", price: 0.15, unit: "second" },
+      { label: "Text to video without audio 720p", price: 0.1, unit: "second" },
+    ]);
+  });
+
   it("reports video minimum charges", async () => {
     mocks.fetchOpenRouterModels.mockResolvedValue([
       {
@@ -205,6 +219,19 @@ describe("radar model variants", () => {
     expect(radar.sources.openRouter).toMatchObject({
       state: "unavailable",
       label: "Some pricing unavailable",
+    });
+  });
+
+  it("retains known hybrid text prices when image pricing is unavailable", async () => {
+    mocks.fetchOpenRouterModels.mockResolvedValue([{
+      ...openRouterModel("example/hybrid", "0.0000005", "0.000003", ["text", "image"]),
+      mediaPricingComplete: false,
+    }]);
+    const data = await getRadarData(true);
+    expect(data.sources.openRouter.state).toBe("unavailable");
+    expect(data.models[0].specializedPricing).toEqual({
+      input: [{ label: "Text", price: 0.5, unit: "1M text tokens" }],
+      output: [{ label: "Text", price: 3, unit: "1M text tokens" }],
     });
   });
 
@@ -277,5 +304,57 @@ describe("radar model variants", () => {
       ],
     });
     expect(models.get("google/lyria-3-pro-preview")?.specializedPricing).toEqual({ input: [], output: [] });
+  });
+});
+
+describe("dashboard refreshes", () => {
+  it.each([false, true])("queues one forced sync after an ordinary refresh (ordinary failure: %s)", async (fail) => {
+    vi.resetModules();
+    const { getRadarData } = await import("$lib/server/radar");
+    const older = openRouterModel("example/model", "0.000001", "0.000002");
+    const fresh = openRouterModel("example/model", "0.000002", "0.000002");
+    let release!: () => void;
+    mocks.fetchOpenRouterModels.mockImplementationOnce(() => new Promise((resolve, reject) => {
+      release = () => fail ? reject(new Error("unavailable")) : resolve([older]);
+    })).mockResolvedValueOnce([fresh]);
+
+    const ordinary = getRadarData();
+    const forced = getRadarData(true);
+    const secondSync = getRadarData(true);
+    expect(mocks.fetchOpenRouterModels.mock.calls).toEqual([[false]]);
+    release();
+    if (fail) await expect(ordinary).rejects.toThrow("unavailable");
+    else expect((await ordinary).models[0].inputPrice).toBe(1);
+    const latest = await forced;
+    expect(latest.models[0].inputPrice).toBe(2);
+    expect(await secondSync).toBe(latest);
+    expect(await getRadarData()).toBe(latest);
+    expect(mocks.fetchOpenRouterModels.mock.calls).toEqual([[false], [true]]);
+    expect(mocks.syncPriceHistory).toHaveBeenCalledTimes(fail ? 1 : 2);
+  });
+
+  it("serves the last dated snapshot on public failures, but reports failed syncs", async () => {
+    vi.useFakeTimers();
+    try {
+      vi.resetModules();
+      const { getRadarData } = await import("$lib/server/radar");
+      mocks.fetchOpenRouterModels.mockResolvedValueOnce([openRouterModel("test", "0.000001", "0.000002")])
+        .mockRejectedValue(new Error("OpenRouter offline"));
+      const first = await getRadarData();
+      vi.advanceTimersByTime(3_600_001);
+      const stale = await getRadarData();
+      expect(stale).toMatchObject({
+        generatedAt: first.generatedAt, snapshotDate: first.snapshotDate,
+        models: first.models, sources: { openRouter: { state: "stale" } },
+      });
+      expect(await getRadarData()).toBe(stale);
+      await expect(getRadarData(true)).rejects.toThrow("OpenRouter offline");
+      expect(mocks.syncPriceHistory).toHaveBeenCalledTimes(1);
+      vi.advanceTimersByTime(60_000);
+      mocks.fetchOpenRouterModels.mockResolvedValueOnce([openRouterModel("new", "0.000001", "0.000002")]);
+      expect((await getRadarData()).sources.openRouter.state).toBe("live");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

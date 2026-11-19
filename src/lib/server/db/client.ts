@@ -157,7 +157,10 @@ async function ensureSchema(client: Client) {
 
 export async function getDatabase() {
   connection ??= createConnection();
-  schemaPromise ??= ensureSchema(connection.client);
+  schemaPromise ??= ensureSchema(connection.client).catch((error) => {
+    schemaPromise = null;
+    throw error;
+  });
   await schemaPromise;
   return connection;
 }

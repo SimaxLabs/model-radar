@@ -28,6 +28,9 @@ export const POST: RequestHandler = async ({ getClientAddress, request, setHeade
 
   try {
     const data = await getRadarData(true);
+    if (data.sources.database.state !== "live") {
+      return json({ error: "Price history could not be saved" }, { status: 503 });
+    }
     return json(
       {
         syncedAt: data.generatedAt,

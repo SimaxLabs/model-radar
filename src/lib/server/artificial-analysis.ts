@@ -109,12 +109,26 @@ async function requestArticles() {
 
   const contentLength = Number(response.headers.get("content-length"));
   if (Number.isFinite(contentLength) && contentLength > MAX_RESPONSE_SIZE) {
+    await response.body?.cancel();
     throw new Error("Artificial Analysis response is too large");
   }
 
-  const html = await response.text();
-  if (html.length > MAX_RESPONSE_SIZE) throw new Error("Artificial Analysis response is too large");
-  const articles = parseArtificialAnalysisArticles(html);
+  if (!response.body) throw new Error("Artificial Analysis returned an empty response");
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let bytes = 0;
+  let html = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    bytes += value.byteLength;
+    if (bytes > MAX_RESPONSE_SIZE) {
+      await reader.cancel();
+      throw new Error("Artificial Analysis response is too large");
+    }
+    html += decoder.decode(value, { stream: true });
+  }
+  const articles = parseArtificialAnalysisArticles(html + decoder.decode());
   if (articles.length === 0) throw new Error("Artificial Analysis returned no valid articles");
 
   return articles;
@@ -122,17 +136,12 @@ async function requestArticles() {
 
 export async function getArtificialAnalysisArticles() {
   if (cache && cache.expiresAt > Date.now()) return cache.data;
-  if (pending) return pending;
-
-  pending = requestArticles();
-  try {
-    const data = await pending;
+  return pending ??= requestArticles().then((data) => {
     cache = { data, expiresAt: Date.now() + CACHE_TTL };
     return data;
-  } catch (error) {
-    if (cache) return cache.data;
-    throw error;
-  } finally {
-    pending = null;
-  }
+  }).catch((error) => {
+    console.error("Artificial Analysis articles load failed", error);
+    cache = { data: cache?.data ?? [], expiresAt: Date.now() + 60_000 };
+    return cache.data;
+  }).finally(() => { pending = null; });
 }

@@ -22,7 +22,7 @@ AI output is treated as a draft, not proof that the software works. Humans decid
 - **Specialized pricing:** native rates for image, audio, video, embedding, speech, transcription, and other non-text models.
 - **Recommendations:** the strongest models overall and the best options below a configurable budget threshold.
 - **Price movements:** independently tracked input and output changes with 15-day retention.
-- **Model comparison:** capability, pricing, context, modalities, and benchmarks for up to four models.
+- **Model comparison:** capability, pricing, modalities, and benchmarks for up to four models. Open a model’s details to see its context window.
 - **Full catalog tools:** search, capability filters, category tabs, sorting, and pagination.
 - **Latest news:** recent model articles from [Artificial Analysis](https://artificialanalysis.ai/articles).
 
@@ -49,6 +49,8 @@ docker compose up -d --build
 ```
 
 Open [http://localhost:3000](http://localhost:3000) for a local deployment. Compose binds to `127.0.0.1` by default; keep that binding and route public traffic through a same-host TLS reverse proxy.
+
+For per-client API limits behind that proxy, set `ADDRESS_HEADER=X-Real-IP` in `.env`. Configure the proxy to **overwrite** this header with the client address (for a direct-facing nginx proxy: `proxy_set_header X-Real-IP $remote_addr;`). Only enable this when all API traffic comes through the trusted proxy. Leave it unset for direct access.
 
 ```bash
 docker compose ps
@@ -96,6 +98,7 @@ Free `:free` and paid `:batch` variants are isolated in dedicated table tabs and
 | `DATABASE_URL` | Local libSQL file or remote Turso URL | `file:.data/model-radar.db` |
 | `DATABASE_AUTH_TOKEN` | Required when `DATABASE_URL` is remote | None |
 | `ORIGIN` | Public HTTPS origin used by SvelteKit in production | None |
+| `ADDRESS_HEADER` | Client IP header overwritten by a trusted reverse proxy | None (socket address) |
 | `BODY_SIZE_LIMIT` | Maximum request body size | `16K` |
 
 Start from `.env.example` for host development or `.env.docker.example` for Docker Compose. Never commit populated environment files.
@@ -119,7 +122,7 @@ curl -X POST \
   https://your-app.example/api/sync
 ```
 
-Only `POST /api/sync` bypasses source caches. Public refreshes continue to use cached upstream data.
+Only `POST /api/sync` bypasses source caches. Overlapping syncs share one fresh fetch after any ordinary refresh finishes. Sync returns `503` if it cannot save price history. If OpenRouter is unavailable, public reads show the last successful snapshot with its timestamp and a stale warning, when one is available.
 
 ## License
 
